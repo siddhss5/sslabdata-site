@@ -1,0 +1,23 @@
+name: Release gate
+
+# Builds the demo against a candidate labdata ref before that ref is tagged
+# or pinned here. Build only: this workflow never deploys.
+
+on:
+  workflow_dispatch:
+    inputs:
+      labdata_ref:
+        description: >-
+          labdata git ref (tag, branch or commit) to build against.
+          Leave empty to use the pin in pyproject.toml.
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+    with:
+      labdata_ref: ${{ inputs.labdata_ref }}
