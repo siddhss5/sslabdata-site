@@ -34,9 +34,11 @@ jobs:
       with:
         version: "0.12.15"
 
+    # --locked fails if uv.lock does not match pyproject.toml, so a changed
+    # pin cannot silently build the commit the old lockfile resolved.
     - name: Install pinned labdata
       run: |
-        uv sync --frozen
+        uv sync --locked
 
     - name: Install candidate labdata
       if: inputs.labdata_ref != ''

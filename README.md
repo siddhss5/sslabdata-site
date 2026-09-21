@@ -23,7 +23,7 @@ is not the owner's real lab site.
 | [`site/`](site/) | The Jekyll site: `_config.yml`, `_pages/`, `_includes/`, `_data/navigation.yml`, and the `Gemfile` / `Gemfile.lock` that pin Jekyll |
 | [`demo/`](demo/) | Example Lab's `lab.yaml`, `people.yaml`, `projects.yaml` and `bib/` |
 | [`scripts/generate_site_config.py`](scripts/generate_site_config.py) | Writes the Jekyll settings that come from `lab.yaml` to `site/_config.generated.yml` |
-| [`tests/`](tests/) | Tests for `generate_site_config.py` |
+| [`tests/`](tests/) | Tests for `generate_site_config.py` and source-level checks on the templates |
 | [`.github/workflows/`](.github/workflows/) | `build.yml` (the build), `pages.yml` (build on PRs, deploy from `main`), `release-gate.yml` (build against a candidate labdata) |
 
 `scripts/generate_site_config.py` reads the optional `site:` section of
@@ -34,17 +34,15 @@ section.
 ## The labdata pin
 
 labdata has no package release, so this repository installs it from an
-immutable git tag. The pin lives in one place, the dependency in
-[`pyproject.toml`](pyproject.toml):
+immutable git tag. The pin is authored in one place: the `labdata`
+dependency in [`pyproject.toml`](pyproject.toml). `uv.lock` is its generated
+resolution, recording the exact commit; do not edit it by hand.
 
-```toml
-"labdata @ git+https://github.com/siddhss5/labdata@schema-v4",
-```
-
-`schema-v4` is commit `c5adb3e`; `uv.lock` records the resolved commit. To
-bump the pin, change the ref in `pyproject.toml` to the new tag, then run
-`uv lock` and commit both files. Run the release gate (below) against the new
-ref first.
+To bump the pin, run the release gate (below) against the new labdata tag,
+then change the tag in the `labdata` dependency in `pyproject.toml`, run
+`uv lock`, and commit both files. The build uses `uv sync --locked`, so a pin
+changed without regenerating `uv.lock` fails rather than building the old
+commit.
 
 ## Build locally
 
@@ -52,7 +50,7 @@ You need [uv](https://docs.astral.sh/uv/) and Ruby with Bundler. Run from the
 repository root, where `demo/lab.yaml`'s relative paths point:
 
 ```bash
-uv sync --frozen
+uv sync --locked
 uv run --frozen pytest
 uv run --frozen labdata --config demo/lab.yaml --validate
 uv run --frozen labdata --config demo/lab.yaml --output site/_data/lab.yml

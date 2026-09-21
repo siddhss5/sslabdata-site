@@ -4,8 +4,8 @@ version = "0.0.0"
 description = "Demo Jekyll renderer for documents produced by labdata"
 requires-python = ">=3.10"
 dependencies = [
-    # The one place labdata is pinned: the immutable schema-v4 tag
-    # (commit c5adb3e). uv.lock records the resolved commit.
+    # The one place labdata is pinned, to an immutable tag. uv.lock is the
+    # generated resolution to a commit; regenerate it with `uv lock`.
     "labdata @ git+https://github.com/siddhss5/labdata@schema-v4",
     "pyyaml",
 ]
