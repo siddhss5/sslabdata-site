@@ -1,0 +1,19 @@
+[project]
+name = "labdata-site"
+version = "0.0.0"
+description = "Demo Jekyll renderer for documents produced by labdata"
+requires-python = ">=3.10"
+dependencies = [
+    # The one place labdata is pinned: the immutable schema-v4 tag
+    # (commit c5adb3e). uv.lock records the resolved commit.
+    "labdata @ git+https://github.com/siddhss5/labdata@schema-v4",
+    "pyyaml",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+]
+
+[tool.uv]
+package = false
