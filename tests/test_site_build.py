@@ -4,8 +4,10 @@ The fixture is a hand-written sslabdata document whose strings carry HTML and
 Markdown, and whose links cover each origin and verification status. The site
 is copied to a temporary directory with the fixture as `_data/lab.yml` and
 built with the pinned gems (`site/Gemfile.lock`). The remote theme is switched
-off so the build needs no network; the checks are on page content, which the
-theme's layouts do not produce.
+off so the build needs no network. In its place a stub `single` layout prints
+the page title and the navigation from `_data/navigation.yml`, the two values
+the theme's layout takes from this repository; the other checks are on page
+content, which the theme does not produce.
 
 Skipped when Bundler or the pinned Jekyll is not installed.
 """
@@ -33,6 +35,8 @@ DERIVED_VERIFIED = "https://derived-verified.invalid/10.1/y"
 SIDECAR_UNCHECKED = "https://sidecar-unchecked.invalid/abs/1"
 INPUT_UNCHECKED = "https://input-unchecked.invalid/talk"
 INPUT_VERIFIED = "https://input-verified.invalid/talk"
+INPUT_MISSING = "https://input-missing.invalid/talk"
+INPUT_MISSING_WEB = "https://input-missing.invalid/site"
 
 
 def link(url, origin, status):
@@ -67,6 +71,10 @@ FIXTURE = {
             "url": [link(INPUT_VERIFIED, "input", "verified")],
             "video": [link(INPUT_VERIFIED, "input", "verified")],
         }),
+        work("missing2024", "An input link nobody found", links={
+            "url": [link(INPUT_MISSING_WEB, "input", "missing")],
+            "video": [link(INPUT_MISSING, "input", "missing")],
+        }),
     ],
     "people": [
         {"id": "ada", "name": PERSON_NAME, "role": "phd_student",
@@ -78,10 +86,18 @@ FIXTURE = {
     "projects": [
         {"id": "demo", "title": "*Project* <b>One</b>",
          "description": "Project _description_ <script>x</script>",
-         "status": "active", "work_ids": ["script2024", "plain2024"]},
+         "status": "active", "work_ids": ["script2024", "plain2024", "missing2024"]},
     ],
     "collaborators": [{"name": "<b>Collab</b> *Orator*"}],
 }
+
+
+STUB_LAYOUT = """<!doctype html>
+<title>{{ page.title | escape }}</title>
+<nav>{% for item in site.data.navigation.main %}<a href="{{ item.url | relative_url }}">{{ item.title | escape }}</a>{% endfor %}</nav>
+<h1 class="page-title">{{ page.title | escape }}</h1>
+{{ content }}
+"""
 
 
 def _jekyll_available():
@@ -110,6 +126,8 @@ def built(tmp_path_factory):
     lines = config.read_text(encoding="utf-8").splitlines(keepends=True)
     config.write_text("".join(l for l in lines if not l.startswith("remote_theme:")),
                       encoding="utf-8")
+    (source / "_layouts").mkdir()
+    (source / "_layouts" / "single.html").write_text(STUB_LAYOUT, encoding="utf-8")
     (source / "_config.test.yml").write_text(
         "title: Fixture\nurl: https://fixture.invalid\nbaseurl: ''\n"
         "repository: fixture/fixture\n", encoding="utf-8")
@@ -185,8 +203,19 @@ def test_unverified_input_link_is_labelled_unchecked(built):
         ("projects", f'<a href="{INPUT_UNCHECKED}" style="margin-right: 0.6em;">Video</a>'),
     ]:
         html = page(built, path)
-        assert anchor + ' <small class="link-status link-status--unchecked"' in html, path
-        assert "(unchecked)</small>" in html, path
+        assert anchor + ' <small class="link-status" style="color: #8a6d3b;">(unchecked)</small>' in html, path
+
+
+def test_missing_input_link_is_labelled_unchecked(built):
+    for path, anchors in [
+        ("publications", [f'<a href="{INPUT_MISSING}" class="btn btn--inverse btn--small" target="_blank">Video</a>']),
+        ("projects", [f'<a href="{INPUT_MISSING_WEB}" style="margin-right: 0.6em;">Website</a>',
+                      f'<a href="{INPUT_MISSING}" style="margin-right: 0.6em;">Video</a>']),
+    ]:
+        html = page(built, path)
+        for anchor in anchors:
+            assert anchor + ' <small class="link-status" style="color: #8a6d3b;">(unchecked)</small>' in html, path
+        assert "(missing)" not in html, path
 
 
 def test_verified_input_link_has_no_label(built):
@@ -195,3 +224,15 @@ def test_verified_input_link_has_no_label(built):
         anchor = f'<a href="{INPUT_VERIFIED}" style="margin-right: 0.6em;">{text}</a>'
         assert anchor in html
         assert anchor + " <small" not in html
+
+
+def test_works_not_publications(built):
+    html = all_html(built)
+    assert "Publications" not in html
+    works = page(built, "publications")
+    assert "<title>Works</title>" in works
+    assert '<h1 class="page-title">Works</h1>' in works
+    for path in PAGES + ["people"]:
+        assert '<a href="/publications/">Works</a>' in page(built, path), path
+    assert "Recent Works" in page(built, "")
+    assert "Works (3)</summary>" in page(built, "projects")

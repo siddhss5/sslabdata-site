@@ -43,7 +43,7 @@ section.
   `derived` (the PDF, DOI and arXiv links sslabdata builds), or `sidecar`,
   `enrichment`, `inferred` or an origin added later — is not shown until it is
   verified. An input link that is not verified is shown labelled
-  "(unchecked)", or "(missing)" if a check found nothing there. See
+  "(unchecked)", whatever its status. See
   [`site/_includes/work_link.html`](site/_includes/work_link.html).
 
 ## The sslabdata pin
