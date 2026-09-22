@@ -4,9 +4,9 @@ These read the template text. They do not render Liquid and do not build the
 site, so what they establish is that the templates ask for the star and for the
 note, and that both are driven by the `equal_contribution` field rather than
 being hard-coded — not that a built page shows them. Verifying rendered output
-(HTML snapshots, internal links, accessibility) is siddhss5/labdata#36.
+(HTML snapshots, internal links, accessibility) is siddhss5/sslabdata#36.
 
-labdata's product is the data file; this repository is an example renderer
+sslabdata's product is the data file; this repository is an example renderer
 that consumes it, which is why these checks stay at the source level and pull
 in nothing to render with.
 """

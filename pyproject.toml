@@ -1,12 +1,12 @@
 [project]
-name = "labdata-site"
+name = "sslabdata-site"
 version = "0.0.0"
-description = "Demo Jekyll renderer for documents produced by labdata"
+description = "Demo Jekyll renderer for documents produced by sslabdata"
 requires-python = ">=3.10"
 dependencies = [
-    # The one place labdata is pinned, to an immutable tag. uv.lock is the
+    # The one place sslabdata is pinned, to an immutable tag or commit. uv.lock is the
     # generated resolution to a commit; regenerate it with `uv lock`.
-    "labdata @ git+https://github.com/siddhss5/labdata@schema-v4",
+    "sslabdata @ git+https://github.com/siddhss5/sslabdata@a54f3b9f71aa7579e35766297ef72fb49c1bf588",
     "pyyaml",
 ]
 

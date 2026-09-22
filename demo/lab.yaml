@@ -1,11 +1,11 @@
-# Example Lab: a fictional lab used as the labdata-site demo.
+# Example Lab: a fictional lab used as the sslabdata-site demo.
 # Its people, works and projects, and their example.org, DOI, arXiv
 # and video links, are invented. Only site.url and site.baseurl are real:
 # together they are where this demo is deployed,
-# https://siddhss5.github.io/labdata-site/.
+# https://siddhss5.github.io/sslabdata-site/.
 #
-# Paths are relative to the repository root, so run labdata from there:
-#   labdata --config demo/lab.yaml --validate
+# Paths are relative to the repository root, so run sslabdata from there:
+#   sslabdata --config demo/lab.yaml --validate
 
 lab:
   name: "Example Lab"
@@ -17,10 +17,10 @@ lab:
 # Jekyll site settings (read by scripts/generate_site_config.py).
 # The site title and description come from lab.name and lab.description.
 # url and baseurl are the demo's real deployment address:
-# https://siddhss5.github.io/labdata-site/.
+# https://siddhss5.github.io/sslabdata-site/.
 site:
   url: "https://siddhss5.github.io"
-  baseurl: "/labdata-site"
+  baseurl: "/sslabdata-site"
 
 bib_dir: "demo/bib"
 bib_files:
