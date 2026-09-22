@@ -5,6 +5,11 @@ layout: single
 classes: wide
 ---
 
+{%- comment -%}
+Unescaped outputs. Every output not listed here is escaped.
+- `collaborators.size`: a count Liquid computes, not a string from the data file.
+{%- endcomment -%}
+
 {% assign people = site.data.lab.people %}
 {% assign collaborators = site.data.lab.collaborators %}
 
@@ -21,25 +26,29 @@ classes: wide
 {% if pi %}
 ## Principal Investigator
 
-<span id="{{ pi.id }}">{% if pi.website %}[{{ pi.name }}]({{ pi.website }}){% else %}{{ pi.name }}{% endif %}</span>
+<p><span id="{{ pi.id | escape }}">{% if pi.website %}<a href="{{ pi.website | escape }}">{{ pi.name | escape }}</a>{% else %}{{ pi.name | escape }}{% endif %}</span></p>
 {% endif %}
 
 {% if current_phd.size > 0 %}
 ## PhD Students
 
-| Name | Co-advisor | Thesis | Started |
-|------|------------|--------|---------|
-{% for p in current_phd %}| <span id="{{ p.id }}">{% if p.website %}[{{ p.name }}]({{ p.website }}){% else %}{{ p.name }}{% endif %}</span> | {{ p.co_advisor }} | {{ p.thesis_title }} | {{ p.start_year }} |
-{% endfor %}
+<table>
+<thead><tr><th>Name</th><th>Co-advisor</th><th>Thesis</th><th>Started</th></tr></thead>
+<tbody>
+{% for p in current_phd %}<tr><td><span id="{{ p.id | escape }}">{% if p.website %}<a href="{{ p.website | escape }}">{{ p.name | escape }}</a>{% else %}{{ p.name | escape }}{% endif %}</span></td><td>{{ p.co_advisor | escape }}</td><td>{{ p.thesis_title | escape }}</td><td>{{ p.start_year | escape }}</td></tr>
+{% endfor %}</tbody>
+</table>
 {% endif %}
 
 {% if current_ms.size > 0 %}
 ## MS Students
 
-| Name | Co-advisor | Thesis | Started |
-|------|------------|--------|---------|
-{% for p in current_ms %}| <span id="{{ p.id }}">{% if p.website %}[{{ p.name }}]({{ p.website }}){% else %}{{ p.name }}{% endif %}</span> | {{ p.co_advisor }} | {{ p.thesis_title }} | {{ p.start_year }} |
-{% endfor %}
+<table>
+<thead><tr><th>Name</th><th>Co-advisor</th><th>Thesis</th><th>Started</th></tr></thead>
+<tbody>
+{% for p in current_ms %}<tr><td><span id="{{ p.id | escape }}">{% if p.website %}<a href="{{ p.website | escape }}">{{ p.name | escape }}</a>{% else %}{{ p.name | escape }}{% endif %}</span></td><td>{{ p.co_advisor | escape }}</td><td>{{ p.thesis_title | escape }}</td><td>{{ p.start_year | escape }}</td></tr>
+{% endfor %}</tbody>
+</table>
 {% endif %}
 
 {% if alumni_postdoc.size > 0 or alumni_phd.size > 0 or alumni_ms.size > 0 %}
@@ -48,28 +57,34 @@ classes: wide
 {% if alumni_postdoc.size > 0 %}
 ### Postdocs
 
-| Name | Period | Current Position |
-|------|--------|------------------|
-{% for p in alumni_postdoc %}| <span id="{{ p.id }}">{% if p.website %}[{{ p.name }}]({{ p.website }}){% else %}{{ p.name }}{% endif %}</span> | {{ p.start_year }}–{{ p.end_year }} | {{ p.current_position }} |
-{% endfor %}
+<table>
+<thead><tr><th>Name</th><th>Period</th><th>Current Position</th></tr></thead>
+<tbody>
+{% for p in alumni_postdoc %}<tr><td><span id="{{ p.id | escape }}">{% if p.website %}<a href="{{ p.website | escape }}">{{ p.name | escape }}</a>{% else %}{{ p.name | escape }}{% endif %}</span></td><td>{{ p.start_year | escape }}–{{ p.end_year | escape }}</td><td>{{ p.current_position | escape }}</td></tr>
+{% endfor %}</tbody>
+</table>
 {% endif %}
 
 {% if alumni_phd.size > 0 %}
 ### PhD Students
 
-| Name | Co-advisor | Thesis | Period | Current Position |
-|------|------------|--------|--------|------------------|
-{% for p in alumni_phd %}| <span id="{{ p.id }}">{% if p.website %}[{{ p.name }}]({{ p.website }}){% else %}{{ p.name }}{% endif %}</span> | {{ p.co_advisor }} | {{ p.thesis_title }} | {{ p.start_year }}–{{ p.end_year }} | {{ p.current_position }} |
-{% endfor %}
+<table>
+<thead><tr><th>Name</th><th>Co-advisor</th><th>Thesis</th><th>Period</th><th>Current Position</th></tr></thead>
+<tbody>
+{% for p in alumni_phd %}<tr><td><span id="{{ p.id | escape }}">{% if p.website %}<a href="{{ p.website | escape }}">{{ p.name | escape }}</a>{% else %}{{ p.name | escape }}{% endif %}</span></td><td>{{ p.co_advisor | escape }}</td><td>{{ p.thesis_title | escape }}</td><td>{{ p.start_year | escape }}–{{ p.end_year | escape }}</td><td>{{ p.current_position | escape }}</td></tr>
+{% endfor %}</tbody>
+</table>
 {% endif %}
 
 {% if alumni_ms.size > 0 %}
 ### MS Students
 
-| Name | Co-advisor | Thesis | Period | Current Position |
-|------|------------|--------|--------|------------------|
-{% for p in alumni_ms %}| <span id="{{ p.id }}">{% if p.website %}[{{ p.name }}]({{ p.website }}){% else %}{{ p.name }}{% endif %}</span> | {{ p.co_advisor }} | {{ p.thesis_title }} | {{ p.start_year }}–{{ p.end_year }} | {{ p.current_position }} |
-{% endfor %}
+<table>
+<thead><tr><th>Name</th><th>Co-advisor</th><th>Thesis</th><th>Period</th><th>Current Position</th></tr></thead>
+<tbody>
+{% for p in alumni_ms %}<tr><td><span id="{{ p.id | escape }}">{% if p.website %}<a href="{{ p.website | escape }}">{{ p.name | escape }}</a>{% else %}{{ p.name | escape }}{% endif %}</span></td><td>{{ p.co_advisor | escape }}</td><td>{{ p.thesis_title | escape }}</td><td>{{ p.start_year | escape }}–{{ p.end_year | escape }}</td><td>{{ p.current_position | escape }}</td></tr>
+{% endfor %}</tbody>
+</table>
 {% endif %}
 
 {% endif %}
@@ -82,7 +97,7 @@ classes: wide
 <details>
 <summary style="cursor: pointer; font-size: 1.17em; font-weight: bold; margin-bottom: 0.5em;">{{ collaborators.size }} co-authors</summary>
 <div style="margin-top: 0.8em; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.3em 2em;">
-{% for c in collaborators %}<div style="font-size: 0.9em;">{{ c.name }}</div>
+{% for c in collaborators %}<div style="font-size: 0.9em;">{{ c.name | escape }}</div>
 {% endfor %}
 </div>
 </details>

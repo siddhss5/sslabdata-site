@@ -5,6 +5,15 @@ layout: single
 classes: wide
 ---
 
+{%- comment -%}
+Unescaped outputs. Every output not listed here is escaped.
+- `project.work_ids.size`: a count Liquid computes, not a string from the data file.
+- `title_link`: HTML captured from work_link.html, which escapes the link's URL and text.
+- `web_link`: HTML captured from work_link.html, which escapes the link's URL and text.
+- `video_link`: HTML captured from work_link.html, which escapes the link's URL and text.
+- `'/projects/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
+{%- endcomment -%}
+
 {% assign projects = site.data.lab.projects %}
 {% assign works = site.data.lab.works %}
 
@@ -13,44 +22,44 @@ classes: wide
 {% else %}
 
 {% for project in projects %}
-<div id="{{ project.id }}" style="margin-top: 2.5em;">
+<div id="{{ project.id | escape }}" style="margin-top: 2.5em;">
 
-<h2 style="display: inline; margin-right: 0.5em;">{{ project.title }}</h2>
+<h2 style="display: inline; margin-right: 0.5em;">{{ project.title | escape }}</h2>
 {% if project.status == "active" %}
   {% if project.website %}
-    <a href="{{ project.website }}" target="_blank" class="btn btn--success btn--small">Active</a>
+    <a href="{{ project.website | escape }}" target="_blank" class="btn btn--success btn--small">Active</a>
   {% else %}
     <span class="btn btn--success btn--small">Active</span>
   {% endif %}
 {% else %}
-  <span class="btn btn--secondary btn--small">{{ project.status | capitalize }}</span>
+  <span class="btn btn--secondary btn--small">{{ project.status | capitalize | escape }}</span>
 {% endif %}
-<a href="{{ '/projects/' | relative_url }}#{{ project.id }}" class="btn btn--info btn--small">{{ project.id }}</a>
+<a href="{{ '/projects/' | relative_url }}#{{ project.id | escape }}" class="btn btn--info btn--small">{{ project.id | escape }}</a>
 
 {% if project.description %}
-<p style="margin-top: 0.8em;">{{ project.description }}</p>
+<p style="margin-top: 0.8em;">{{ project.description | escape }}</p>
 {% endif %}
 
 {% if project.work_ids.size > 0 %}
 <details>
-<summary style="cursor: pointer; font-size: 1.17em; font-weight: bold; margin-top: 0.5em; margin-bottom: 0.5em;">Publications ({{ project.work_ids.size }})</summary>
+<summary style="cursor: pointer; font-size: 1.17em; font-weight: bold; margin-top: 0.5em; margin-bottom: 0.5em;">Works ({{ project.work_ids.size }})</summary>
 <div style="margin-top: 0.8em;">
 {% for work_id in project.work_ids %}
   {% assign pub = works | where: "bib_id", work_id | first %}
   {% if pub %}
-  {% capture pdf_url %}{% include link_url.html work=pub kind="pdf" %}{% endcapture %}
-  {% capture web_url %}{% include link_url.html work=pub kind="url" %}{% endcapture %}
-  {% capture video_url %}{% include link_url.html work=pub kind="video" %}{% endcapture %}
+  {% capture title_link %}{% include work_link.html work=pub kind="pdf" text=pub.title %}{% endcapture %}
+  {% capture web_link %}{% include work_link.html work=pub kind="url" text="Website" style="margin-right: 0.6em;" %}{% endcapture %}
+  {% capture video_link %}{% include work_link.html work=pub kind="video" text="Video" style="margin-right: 0.6em;" %}{% endcapture %}
 <div style="margin-bottom: 1.2em;">
   <div>
-    {% if pdf_url != "" %}
-      <a href="{{ pdf_url }}">{{ pub.title }}</a>
+    {% if title_link != "" %}
+      {{ title_link }}
     {% else %}
-      {{ pub.title }}
+      {{ pub.title | escape }}
     {% endif %}
   </div>
   <div style="font-size: 0.9em; color: #494e52;">
-    {% for author in pub.authors %}{{ author.name }}{% if author.equal_contribution %}<sup>*</sup>{% endif %}{% unless forloop.last %}, {% endunless %}{% endfor %}
+    {% for author in pub.authors %}{{ author.name | escape }}{% if author.equal_contribution %}<sup>*</sup>{% endif %}{% unless forloop.last %}, {% endunless %}{% endfor %}
   </div>
   {% assign equal_authors = pub.authors | where: "equal_contribution", true %}
   {% if equal_authors.size > 0 %}
@@ -59,11 +68,11 @@ classes: wide
   <div style="font-size: 0.9em; color: #494e52;">
     {% include venue.html work=pub %}
   </div>
-  {% if pub.note or web_url != "" or video_url != "" %}
+  {% if pub.note or web_link != "" or video_link != "" %}
   <div style="font-size: 0.9em; margin-top: 0.2em;">
-    {% if web_url != "" %}<a href="{{ web_url }}" style="margin-right: 0.6em;">Website</a>{% endif %}
-    {% if video_url != "" %}<a href="{{ video_url }}" style="margin-right: 0.6em;">Video</a>{% endif %}
-    {% if pub.note %}<strong>{{ pub.note | markdownify | remove: "<p>" | remove: "</p>" }}</strong>{% endif %}
+    {{ web_link }}
+    {{ video_link }}
+    {% if pub.note %}<strong>{{ pub.note | escape }}</strong>{% endif %}
   </div>
   {% endif %}
 </div>

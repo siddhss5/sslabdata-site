@@ -1,0 +1,40 @@
+{%- comment -%}
+A work's link of one kind, as an anchor, or nothing.
+
+`links` is an open map from kind to a *list* of link records. This renders
+the first record that is not a guess:
+
+- one written in the input (`origin: input`), whatever its verification;
+- one of any origin whose `verification.status` is `verified`; or
+- a `derived` link of a kind in `identifier_kinds` below.
+
+`identifier_kinds` are the kinds whose URL sslabdata builds entirely from an
+identifier the entry declares: `doi` from `doi`, `arxiv` from `eprint`. They
+are not guesses, so they are rendered, unlabelled. It is an explicit list,
+matching the pinned sslabdata's `build_links()`, rather than a heuristic.
+Any other `derived` link, such as the `pdf` link built from `pdf_base_url`
+and the citation key, is guessed from a pattern and is not rendered unless it
+is verified. Links of other origins (`sidecar`, `enrichment`, `inferred`, or
+an origin added later) are not rendered unless they are verified.
+
+An input link that is not verified, whatever its status, is rendered with a
+visible "unchecked" label.
+
+Parameters: `work`, `kind`, `text` (escaped here), and optional `class`,
+`style` and `blank` (open in a new tab).
+{%- endcomment -%}
+{%- assign identifier_kinds = "doi,arxiv" | split: "," -%}
+{%- assign link = nil -%}
+{%- assign records = include.work.links[include.kind] -%}
+{%- for record in records -%}
+  {%- assign from_identifier = false -%}
+  {%- if record.origin == "derived" and identifier_kinds contains include.kind -%}{%- assign from_identifier = true -%}{%- endif -%}
+  {%- if record.origin == "input" or record.verification.status == "verified" or from_identifier -%}
+    {%- assign link = record -%}
+    {%- break -%}
+  {%- endif -%}
+{%- endfor -%}
+{%- if link -%}
+<a href="{{ link.url | escape }}"{% if include.class %} class="{{ include.class | escape }}"{% endif %}{% if include.style %} style="{{ include.style | escape }}"{% endif %}{% if include.blank %} target="_blank"{% endif %}>{{ include.text | escape }}</a>
+{%- if link.origin == "input" and link.verification.status != "verified" %} <small class="link-status" style="color: #8a6d3b;">(unchecked)</small>{% endif -%}
+{%- endif -%}

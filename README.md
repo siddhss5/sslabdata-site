@@ -6,7 +6,7 @@ A demo Jekyll renderer for the document that
 sslabdata compiles BibTeX and a little YAML into one schema-specified document.
 This repository is one **optional downstream consumer** of that document: a
 set of Jekyll templates (Minimal Mistakes theme) that render it as
-publications, people and projects pages. It is not part of sslabdata and not
+works, people and projects pages. It is not part of sslabdata and not
 part of what sslabdata promises; sslabdata does not depend on it.
 
 It renders the fictional **Example Lab** in [`demo/`](demo/), deployed at
@@ -21,15 +21,36 @@ is not the owner's real lab site.
 | Path | What it is |
 |------|------------|
 | [`site/`](site/) | The Jekyll site: `_config.yml`, `_pages/`, `_includes/`, `_data/navigation.yml`, and the `Gemfile` / `Gemfile.lock` that pin Jekyll |
-| [`demo/`](demo/) | Example Lab's `lab.yaml`, `people.yaml`, `projects.yaml` and `bib/` |
+| [`demo/`](demo/) | Example Lab's `lab.yaml`, `people.yaml`, `projects.yaml`, `collaborators.yaml` and `bib/` |
 | [`scripts/generate_site_config.py`](scripts/generate_site_config.py) | Writes the Jekyll settings that come from `lab.yaml` to `site/_config.generated.yml` |
-| [`tests/`](tests/) | Tests for `generate_site_config.py` and source-level checks on the templates |
+| [`tests/`](tests/) | Tests for `generate_site_config.py`, source-level checks on the templates, and checks on the HTML Jekyll builds from a fixture data file |
 | [`.github/workflows/`](.github/workflows/) | `build.yml` (the build), `pages.yml` (build on PRs, deploy from `main`), `release-gate.yml` (build against a candidate sslabdata) |
 
 `scripts/generate_site_config.py` reads the optional `site:` section of
 `lab.yaml` (`url` and `baseurl`) and writes it, with the lab name and
 description, into `site/_config.generated.yml`. sslabdata itself ignores that
 section.
+
+## Rendering rules
+
+- **Every string is text.** Every string taken from the data file is escaped
+  where it is printed, `note` included; none is read as HTML or Markdown.
+  A template that prints anything unescaped names it, with the reason, in an
+  "Unescaped outputs." comment; only values the templates make themselves
+  (counts, literal paths, HTML built by `work_link.html`) are listed, never a
+  data field. `tests/test_site_template_source.py` fails on any output that is
+  neither escaped nor listed.
+- **Links that are not guesses.** A work's link is shown when it is written in
+  the input (`origin: input`), when its `verification.status` is `verified`,
+  or when sslabdata built it from an identifier the entry declares: the
+  `derived` links of kind `doi` (from `doi`) and `arxiv` (from `eprint`),
+  which are shown unlabelled. Any other `derived` link, such as the PDF link
+  guessed from `pdf_base_url` and the citation key, is not shown until it is
+  verified; nor is a link of another origin (`sidecar`, `enrichment`,
+  `inferred` or one added later). An input link that is not verified is shown
+  labelled "(unchecked)", whatever its status. See
+  [`site/_includes/work_link.html`](site/_includes/work_link.html), which
+  names the identifier kinds in an explicit list.
 
 ## The sslabdata pin
 
