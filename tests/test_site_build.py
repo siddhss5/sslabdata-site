@@ -9,12 +9,16 @@ the page title and the navigation from `_data/navigation.yml`, the two values
 the theme's layout takes from this repository; the other checks are on page
 content, which the theme does not produce.
 
+The same build is also run on the demo document the pinned sslabdata emits,
+to check which of its links are shown.
+
 Skipped when Bundler or the pinned Jekyll is not installed.
 """
 
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -29,9 +33,13 @@ SCRIPT_TITLE = "<script>alert(1)</script> and a tidy kitchen"
 NOTE = "*emphasis* & <b>bold</b>"
 PERSON_NAME = "*Ada* <i>Lovelace</i>"
 
-DERIVED_UNCHECKED = "https://derived-unchecked.invalid/paper.pdf"
-DERIVED_MISSING = "https://derived-missing.invalid/10.1/x"
-DERIVED_VERIFIED = "https://derived-verified.invalid/10.1/y"
+# Derived links: DOI and arXiv are built from a declared identifier; a PDF is
+# guessed from a pattern.
+DOI_UNCHECKED = "https://doi-derived.invalid/10.1/x"
+ARXIV_UNCHECKED = "https://arxiv-derived.invalid/abs/2401.00001"
+PDF_UNCHECKED = "https://pdf-unchecked.invalid/script2024.pdf"
+PDF_MISSING = "https://pdf-missing.invalid/missing2024.pdf"
+PDF_VERIFIED = "https://pdf-verified.invalid/plain2024.pdf"
 SIDECAR_UNCHECKED = "https://sidecar-unchecked.invalid/abs/1"
 INPUT_UNCHECKED = "https://input-unchecked.invalid/talk"
 INPUT_VERIFIED = "https://input-verified.invalid/talk"
@@ -61,17 +69,19 @@ FIXTURE = {
             "university": "U & U", "description": "<b>desc</b>"},
     "works": [
         work("script2024", SCRIPT_TITLE, note=NOTE, links={
-            "pdf": [link(DERIVED_UNCHECKED, "derived", "unchecked")],
-            "doi": [link(DERIVED_MISSING, "derived", "missing"),
-                    link(DERIVED_VERIFIED, "derived", "verified")],
-            "arxiv": [link(SIDECAR_UNCHECKED, "sidecar", "unchecked")],
+            "pdf": [link(PDF_UNCHECKED, "derived", "unchecked")],
+            "doi": [link(DOI_UNCHECKED, "derived", "unchecked")],
+            "arxiv": [link(SIDECAR_UNCHECKED, "sidecar", "unchecked"),
+                      link(ARXIV_UNCHECKED, "derived", "unchecked")],
             "video": [link(INPUT_UNCHECKED, "input", "unchecked")],
         }),
         work("plain2024", "A plain title", links={
+            "pdf": [link(PDF_VERIFIED, "derived", "verified")],
             "url": [link(INPUT_VERIFIED, "input", "verified")],
             "video": [link(INPUT_VERIFIED, "input", "verified")],
         }),
         work("missing2024", "An input link nobody found", links={
+            "pdf": [link(PDF_MISSING, "derived", "missing")],
             "url": [link(INPUT_MISSING_WEB, "input", "missing")],
             "video": [link(INPUT_MISSING, "input", "missing")],
         }),
@@ -109,17 +119,15 @@ def _jekyll_available():
     return result.returncode == 0
 
 
-@pytest.fixture(scope="module")
-def built(tmp_path_factory):
+def build(tmp, data):
+    """Build a copy of site/ with `data` as _data/lab.yml; return the output."""
     if not _jekyll_available():
         pytest.skip("bundle exec jekyll is not available")
-    tmp = tmp_path_factory.mktemp("site")
     source = tmp / "site"
     shutil.copytree(SITE, source, ignore=shutil.ignore_patterns(
         "_site", ".jekyll-cache", ".jekyll-metadata", ".bundle", "vendor",
         "lab.yml", "_config.generated.yml"))
-    (source / "_data" / "lab.yml").write_text(
-        yaml.safe_dump(FIXTURE, allow_unicode=True), encoding="utf-8")
+    (source / "_data" / "lab.yml").write_text(data, encoding="utf-8")
     # Drop the remote theme, which is fetched at build time; a later config
     # file cannot unset it.
     config = source / "_config.yml"
@@ -141,6 +149,25 @@ def built(tmp_path_factory):
         capture_output=True, text=True, env=env, cwd=SITE)
     assert result.returncode == 0, result.stdout + result.stderr
     return dest
+
+
+@pytest.fixture(scope="module")
+def built(tmp_path_factory):
+    return build(tmp_path_factory.mktemp("site"),
+                 yaml.safe_dump(FIXTURE, allow_unicode=True))
+
+
+@pytest.fixture(scope="module")
+def demo(tmp_path_factory):
+    """The site built from the demo document the pinned sslabdata emits."""
+    tmp = tmp_path_factory.mktemp("demo")
+    data = tmp / "lab.yml"
+    result = subprocess.run(
+        [str(Path(sys.executable).parent / "sslabdata"), "--config", "demo/lab.yaml",
+         "--output", str(data)], capture_output=True, text=True, cwd=REPO_ROOT)
+    assert result.returncode == 0, result.stdout + result.stderr
+    document = yaml.safe_load(data.read_text(encoding="utf-8"))
+    return build(tmp, data.read_text(encoding="utf-8")), document
 
 
 def page(built, path):
@@ -184,17 +211,31 @@ def test_no_markup_from_data_reaches_the_site(built):
         assert literal in html, literal
 
 
-@pytest.mark.parametrize("url", [DERIVED_UNCHECKED, DERIVED_MISSING, SIDECAR_UNCHECKED])
-def test_unverified_non_input_links_are_not_rendered(built, url):
+@pytest.mark.parametrize("url", [PDF_UNCHECKED, PDF_MISSING, SIDECAR_UNCHECKED])
+def test_unverified_guessed_and_other_origin_links_are_not_rendered(built, url):
     for p in built.rglob("*"):
         if p.is_file():
             assert url not in p.read_text(encoding="utf-8", errors="replace"), p
 
 
-def test_verified_derived_link_is_rendered_without_label(built):
-    html = page(built, "publications")
-    assert f'<a href="{DERIVED_VERIFIED}" class="btn btn--inverse btn--small" target="_blank">DOI</a>' in html
-    assert f'>DOI</a> <small' not in html
+@pytest.mark.parametrize("path", ["", "publications"])
+def test_identifier_links_are_rendered_without_label(built, path):
+    """Derived DOI and arXiv links are rendered though unchecked, unlabelled."""
+    html = page(built, path)
+    for url, text in [(DOI_UNCHECKED, "DOI"), (ARXIV_UNCHECKED, "arXiv")]:
+        anchor = f'<a href="{url}" class="btn btn--inverse btn--small" target="_blank">{text}</a>'
+        assert anchor in html, text
+        assert anchor + " <small" not in html, text
+
+
+def test_verified_guessed_link_is_rendered_without_label(built):
+    for path, anchor in [
+        ("publications", f'<strong><a href="{PDF_VERIFIED}">A plain title</a></strong>'),
+        ("projects", f'<a href="{PDF_VERIFIED}">A plain title</a>'),
+    ]:
+        html = page(built, path)
+        assert anchor in html, path
+        assert anchor + " <small" not in html, path
 
 
 def test_unverified_input_link_is_labelled_unchecked(built):
@@ -236,3 +277,22 @@ def test_works_not_publications(built):
         assert '<a href="/publications/">Works</a>' in page(built, path), path
     assert "Recent Works" in page(built, "")
     assert "Works (3)</summary>" in page(built, "projects")
+
+
+def test_demo_shows_identifier_links_and_hides_guessed_pdfs(demo):
+    built, document = demo
+    html = all_html(built)
+    links = [(kind, l) for w in document["works"]
+             for kind, records in (w.get("links") or {}).items() for l in records]
+    by_kind = {kind: [l for k, l in links if k == kind] for kind in ("doi", "arxiv", "pdf")}
+    # The pinned sslabdata builds all three as derived and unchecked.
+    assert all(l["origin"] == "derived" and l["verification"]["status"] == "unchecked"
+               for records in by_kind.values() for l in records)
+    assert by_kind["doi"] and by_kind["arxiv"] and by_kind["pdf"]
+    for kind, text in [("doi", "DOI"), ("arxiv", "arXiv")]:
+        for l in by_kind[kind]:
+            anchor = f'<a href="{l["url"]}" class="btn btn--inverse btn--small" target="_blank">{text}</a>'
+            assert anchor in html, l["url"]
+            assert anchor + " <small" not in html, l["url"]
+    for l in by_kind["pdf"]:
+        assert l["url"] not in html, l["url"]

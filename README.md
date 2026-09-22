@@ -40,13 +40,17 @@ section.
   (counts, literal paths, HTML built by `work_link.html`) are listed, never a
   data field. `tests/test_site_template_source.py` fails on any output that is
   neither escaped nor listed.
-- **Links by verification.** A work's link is shown when its `origin` is
-  `input`, or when its `verification.status` is `verified`. Any other link —
-  `derived` (the PDF, DOI and arXiv links sslabdata builds), or `sidecar`,
-  `enrichment`, `inferred` or an origin added later — is not shown until it is
-  verified. An input link that is not verified is shown labelled
-  "(unchecked)", whatever its status. See
-  [`site/_includes/work_link.html`](site/_includes/work_link.html).
+- **Links that are not guesses.** A work's link is shown when it is written in
+  the input (`origin: input`), when its `verification.status` is `verified`,
+  or when sslabdata built it from an identifier the entry declares: the
+  `derived` links of kind `doi` (from `doi`) and `arxiv` (from `eprint`),
+  which are shown unlabelled. Any other `derived` link, such as the PDF link
+  guessed from `pdf_base_url` and the citation key, is not shown until it is
+  verified; nor is a link of another origin (`sidecar`, `enrichment`,
+  `inferred` or one added later). An input link that is not verified is shown
+  labelled "(unchecked)", whatever its status. See
+  [`site/_includes/work_link.html`](site/_includes/work_link.html), which
+  names the identifier kinds in an explicit list.
 
 ## The sslabdata pin
 
