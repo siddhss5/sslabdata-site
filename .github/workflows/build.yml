@@ -52,10 +52,6 @@ jobs:
       run: |
         uv run --no-sync python -c "from importlib.metadata import distribution as d; x = d('sslabdata'); print(x.version, x.read_text('direct_url.json'))"
 
-    - name: Run tests
-      run: |
-        uv run --no-sync pytest
-
     - name: Validate demo lab
       run: |
         uv run --no-sync sslabdata --config demo/lab.yaml --validate
@@ -74,6 +70,12 @@ jobs:
         # Installs the gems pinned in site/Gemfile.lock (frozen) and caches them.
         bundler-cache: true
         working-directory: site
+
+    # After Ruby, so the tests that build the site from a fixture run rather
+    # than skip.
+    - name: Run tests
+      run: |
+        uv run --no-sync pytest
 
     - name: Build Jekyll site
       working-directory: site
