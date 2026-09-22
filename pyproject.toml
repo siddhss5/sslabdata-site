@@ -6,7 +6,7 @@ requires-python = ">=3.10"
 dependencies = [
     # The one place sslabdata is pinned, to an immutable tag or commit. uv.lock is the
     # generated resolution to a commit; regenerate it with `uv lock`.
-    "sslabdata @ git+https://github.com/siddhss5/sslabdata@a54f3b9f71aa7579e35766297ef72fb49c1bf588",
+    "sslabdata @ git+https://github.com/siddhss5/sslabdata@c0d0072a0338a303b67bda11437af8dffa2deb07",
     "pyyaml",
 ]
 
