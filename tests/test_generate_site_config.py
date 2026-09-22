@@ -31,7 +31,7 @@ class TestGenerateSiteConfig:
         assert config["url"] == lab_config["site"]["url"]
         assert config["baseurl"] == lab_config["site"]["baseurl"]
         # Where the demo is deployed.
-        assert config["url"] + config["baseurl"] == "https://siddhss5.github.io/labdata-site"
+        assert config["url"] + config["baseurl"] == "https://siddhss5.github.io/sslabdata-site"
 
     def test_values_follow_lab_yaml(self, tmp_path):
         lab_yaml = tmp_path / "lab.yaml"

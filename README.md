@@ -1,19 +1,19 @@
-# labdata-site
+# sslabdata-site
 
 A demo Jekyll renderer for the document that
-[labdata](https://github.com/siddhss5/labdata) emits.
+[sslabdata](https://github.com/siddhss5/sslabdata) emits.
 
-labdata compiles BibTeX and a little YAML into one schema-specified document.
+sslabdata compiles BibTeX and a little YAML into one schema-specified document.
 This repository is one **optional downstream consumer** of that document: a
 set of Jekyll templates (Minimal Mistakes theme) that render it as
-publications, people and projects pages. It is not part of labdata and not
-part of what labdata promises; labdata does not depend on it.
+publications, people and projects pages. It is not part of sslabdata and not
+part of what sslabdata promises; sslabdata does not depend on it.
 
 It renders the fictional **Example Lab** in [`demo/`](demo/), deployed at
-<https://siddhss5.github.io/labdata-site/>.
+<https://siddhss5.github.io/sslabdata-site/>.
 
 It is a worked example, not a polished template for other labs to adopt
-(that is [labdata#37](https://github.com/siddhss5/labdata/issues/37)), and it
+(that is [sslabdata#37](https://github.com/siddhss5/sslabdata/issues/37)), and it
 is not the owner's real lab site.
 
 ## Layout
@@ -24,22 +24,22 @@ is not the owner's real lab site.
 | [`demo/`](demo/) | Example Lab's `lab.yaml`, `people.yaml`, `projects.yaml` and `bib/` |
 | [`scripts/generate_site_config.py`](scripts/generate_site_config.py) | Writes the Jekyll settings that come from `lab.yaml` to `site/_config.generated.yml` |
 | [`tests/`](tests/) | Tests for `generate_site_config.py` and source-level checks on the templates |
-| [`.github/workflows/`](.github/workflows/) | `build.yml` (the build), `pages.yml` (build on PRs, deploy from `main`), `release-gate.yml` (build against a candidate labdata) |
+| [`.github/workflows/`](.github/workflows/) | `build.yml` (the build), `pages.yml` (build on PRs, deploy from `main`), `release-gate.yml` (build against a candidate sslabdata) |
 
 `scripts/generate_site_config.py` reads the optional `site:` section of
 `lab.yaml` (`url` and `baseurl`) and writes it, with the lab name and
-description, into `site/_config.generated.yml`. labdata itself ignores that
+description, into `site/_config.generated.yml`. sslabdata itself ignores that
 section.
 
-## The labdata pin
+## The sslabdata pin
 
-labdata has no package release, so this repository installs it from an
-immutable git tag. The pin is authored in one place: the `labdata`
+sslabdata has no package release, so this repository installs it from an
+immutable git tag or commit. The pin is authored in one place: the `sslabdata`
 dependency in [`pyproject.toml`](pyproject.toml). `uv.lock` is its generated
 resolution, recording the exact commit; do not edit it by hand.
 
-To bump the pin, run the release gate (below) against the new labdata tag,
-then change the tag in the `labdata` dependency in `pyproject.toml`, run
+To bump the pin, run the release gate (below) against the new sslabdata tag,
+then change the tag in the `sslabdata` dependency in `pyproject.toml`, run
 `uv lock`, and commit both files. The build uses `uv sync --locked`, so a pin
 changed without regenerating `uv.lock` fails rather than building the old
 commit.
@@ -52,15 +52,15 @@ repository root, where `demo/lab.yaml`'s relative paths point:
 ```bash
 uv sync --locked
 uv run --frozen pytest
-uv run --frozen labdata --config demo/lab.yaml --validate
-uv run --frozen labdata --config demo/lab.yaml --output site/_data/lab.yml
+uv run --frozen sslabdata --config demo/lab.yaml --validate
+uv run --frozen sslabdata --config demo/lab.yaml --output site/_data/lab.yml
 uv run --frozen python scripts/generate_site_config.py demo/lab.yaml site/_config.generated.yml
 cd site
 bundle install
 bundle exec jekyll serve --config _config.yml,_config.generated.yml
 ```
 
-The site is served under `/labdata-site/`, the demo's `baseurl`.
+The site is served under `/sslabdata-site/`, the demo's `baseurl`.
 
 ## Deployment
 
@@ -71,7 +71,7 @@ request and on push to `main`, and deploys it to GitHub Pages on push to
 ## Release gate
 
 [`release-gate.yml`](.github/workflows/release-gate.yml) builds this site
-against a candidate labdata git ref — a tag, branch or commit — before that
+against a candidate sslabdata git ref — a tag, branch or commit — before that
 ref is tagged or pinned here. It runs the same build as `pages.yml` (tests,
 `--validate`, data and config generation, Jekyll build) and never deploys.
 Leaving the ref empty builds against the pin.
@@ -80,8 +80,8 @@ From the Actions tab, choose **Release gate**, then **Run workflow**, and
 enter the ref. Or with the GitHub CLI:
 
 ```bash
-gh workflow run release-gate.yml -R siddhss5/labdata-site -f labdata_ref=<ref>
-gh run watch -R siddhss5/labdata-site
+gh workflow run release-gate.yml -R siddhss5/sslabdata-site -f sslabdata_ref=<ref>
+gh run watch -R siddhss5/sslabdata-site
 ```
 
-The log's "Show labdata version" step prints the commit that was built.
+The log's "Show sslabdata version" step prints the commit that was built.

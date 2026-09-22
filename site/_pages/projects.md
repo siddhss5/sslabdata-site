@@ -9,7 +9,7 @@ classes: wide
 {% assign works = site.data.lab.works %}
 
 {% if projects.size == 0 %}
-<p><em>No projects data configured yet. Add a <code>projects_file</code> to your labdata config to populate this page.</em></p>
+<p><em>No projects data configured yet. Add a <code>projects_file</code> to your sslabdata config to populate this page.</em></p>
 {% else %}
 
 {% for project in projects %}
