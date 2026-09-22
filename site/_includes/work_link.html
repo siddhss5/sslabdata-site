@@ -1,0 +1,33 @@
+{%- comment -%}
+A work's link of one kind, as an anchor, or nothing.
+
+`links` is an open map from kind to a *list* of link records. This renders
+the first record sslabdata can vouch for:
+
+- one written in the input (`origin: input`), whatever its verification; or
+- one of any other origin whose `verification.status` is `verified`.
+
+A link sslabdata built itself (`derived`) or took from elsewhere (`sidecar`,
+`enrichment`, `inferred`, or an origin added later) that nobody has verified
+is not rendered. An input link that is not verified is rendered with a
+visible label: "missing" when the check found nothing there, "unchecked"
+otherwise.
+
+Parameters: `work`, `kind`, `text` (escaped here), and optional `class`,
+`style` and `blank` (open in a new tab).
+{%- endcomment -%}
+{%- assign link = nil -%}
+{%- assign records = include.work.links[include.kind] -%}
+{%- for record in records -%}
+  {%- if record.origin == "input" or record.verification.status == "verified" -%}
+    {%- assign link = record -%}
+    {%- break -%}
+  {%- endif -%}
+{%- endfor -%}
+{%- if link -%}
+<a href="{{ link.url | escape }}"{% if include.class %} class="{{ include.class | escape }}"{% endif %}{% if include.style %} style="{{ include.style | escape }}"{% endif %}{% if include.blank %} target="_blank"{% endif %}>{{ include.text | escape }}</a>
+{%- unless link.verification.status == "verified" -%}
+  {%- if link.verification.status == "missing" -%}{%- assign status = "missing" -%}{%- else -%}{%- assign status = "unchecked" -%}{%- endif -%}
+  {{ " " }}<small class="link-status link-status--{{ status }}" style="color: #8a6d3b;">({{ status }})</small>
+{%- endunless -%}
+{%- endif -%}

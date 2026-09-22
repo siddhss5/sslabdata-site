@@ -11,6 +11,7 @@ that consumes it, which is why these checks stay at the source level and pull
 in nothing to render with.
 """
 
+import re
 from pathlib import Path
 
 
@@ -27,7 +28,7 @@ def test_author_list_source_stars_marked_authors():
     """The include stars an author whose `equal_contribution` is true."""
     source = AUTHOR_LIST.read_text(encoding="utf-8")
     assert STAR in source, source
-    assert source.index("{{ author.name }}") < source.index(STAR), source
+    assert source.index("{{ author.name | escape }}") < source.index(STAR), source
 
 
 def test_author_list_source_notes_equal_contribution():
@@ -45,3 +46,31 @@ def test_projects_page_source_stars_and_notes_marked_authors():
     assert MARKED in source, source
     assert "{% if equal_authors.size > 0 %}" in source, source
     assert source.count(NOTE) == 1, source
+
+
+# Every `{{ ... }}` in the templates is escaped, unless its expression is one
+# of these. None of them is a string from the data file: no data field is
+# allowed to carry markup.
+UNESCAPED_ALLOWLIST = {
+    # HTML captured from work_link.html, which escapes the URL and the text.
+    "title_link", "web_link", "video_link",
+    # Values the templates assign from literals.
+    "sep", "status",
+    # Counts.
+    "pubs.size", "current.size", "alumni.size", "projects.size",
+    "project.work_ids.size", "collaborators.size",
+    # Literal site paths.
+    "'/people/' | relative_url", "'/projects/' | relative_url",
+    "'/publications/' | relative_url",
+    # A literal space.
+    '" "',
+}
+ESCAPED = re.compile(r"\|\s*(escape|xml_escape)\s*$")
+
+
+def test_every_output_is_escaped_or_allowlisted():
+    templates = sorted((REPO_ROOT / "site" / "_includes").glob("*.html"))
+    templates += sorted((REPO_ROOT / "site" / "_pages").glob("*.md"))
+    for path in templates:
+        for expr in re.findall(r"\{\{-?\s*(.*?)\s*-?\}\}", path.read_text(encoding="utf-8")):
+            assert ESCAPED.search(expr) or expr in UNESCAPED_ALLOWLIST, f"{path.name}: {{{{ {expr} }}}}"
