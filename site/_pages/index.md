@@ -5,6 +5,17 @@ layout: single
 classes: wide
 ---
 
+{%- comment -%}
+Unescaped outputs. Every output not listed here is escaped.
+- `pubs.size`: a count Liquid computes, not a string from the data file.
+- `current.size`: a count Liquid computes, not a string from the data file.
+- `alumni.size`: a count Liquid computes, not a string from the data file.
+- `projects.size`: a count Liquid computes, not a string from the data file.
+- `'/publications/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
+- `'/people/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
+- `'/projects/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
+{%- endcomment -%}
+
 {% assign info = site.data.lab.lab %}
 {% assign pubs = site.data.lab.works %}
 {% assign people = site.data.lab.people %}

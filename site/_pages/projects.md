@@ -5,6 +5,15 @@ layout: single
 classes: wide
 ---
 
+{%- comment -%}
+Unescaped outputs. Every output not listed here is escaped.
+- `project.work_ids.size`: a count Liquid computes, not a string from the data file.
+- `title_link`: HTML captured from work_link.html, which escapes the link's URL and text.
+- `web_link`: HTML captured from work_link.html, which escapes the link's URL and text.
+- `video_link`: HTML captured from work_link.html, which escapes the link's URL and text.
+- `'/projects/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
+{%- endcomment -%}
+
 {% assign projects = site.data.lab.projects %}
 {% assign works = site.data.lab.works %}
 

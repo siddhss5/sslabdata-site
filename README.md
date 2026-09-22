@@ -35,9 +35,11 @@ section.
 
 - **Every string is text.** Every string taken from the data file is escaped
   where it is printed, `note` included; none is read as HTML or Markdown.
-  `tests/test_site_template_source.py` checks that each `{{ ... }}` in the
-  templates is escaped or on a short allowlist of values the templates make
-  themselves; no data field is on it.
+  A template that prints anything unescaped names it, with the reason, in an
+  "Unescaped outputs." comment; only values the templates make themselves
+  (counts, literal paths, HTML built by `work_link.html`) are listed, never a
+  data field. `tests/test_site_template_source.py` fails on any output that is
+  neither escaped nor listed.
 - **Links by verification.** A work's link is shown when its `origin` is
   `input`, or when its `verification.status` is `verified`. Any other link —
   `derived` (the PDF, DOI and arXiv links sslabdata builds), or `sidecar`,

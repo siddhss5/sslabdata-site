@@ -5,6 +5,11 @@ layout: single
 classes: wide
 ---
 
+{%- comment -%}
+Unescaped outputs. Every output not listed here is escaped.
+- `collaborators.size`: a count Liquid computes, not a string from the data file.
+{%- endcomment -%}
+
 {% assign people = site.data.lab.people %}
 {% assign collaborators = site.data.lab.collaborators %}
 

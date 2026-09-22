@@ -1,6 +1,10 @@
 {%- comment -%}
 One work. Every string from the data file is plain text and is escaped where
 it is printed; `note` is plain text too, not Markdown.
+
+Unescaped outputs. Every output not listed here is escaped.
+- `title_link`: HTML captured from work_link.html, which escapes the link's URL and text.
+- `'/projects/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
 {%- endcomment -%}
 {% capture title_link %}{% include work_link.html work=include.pub kind="pdf" text=include.pub.title %}{% endcapture %}
 <div class="pub-entry" style="margin-bottom: 1.5em;" data-searchable="{{ include.pub.title | downcase | escape }} {{ include.pub.authors | map: 'name' | join: ' ' | downcase | escape }} {{ include.pub.venue.name | downcase | escape }} {{ include.pub.bib_id | downcase | escape }}">
