@@ -506,8 +506,9 @@ def test_demo_people_page_groups(demo):
 
 
 class Loads(HTMLParser):
-    """Every URL a browser fetches to show the page: src, srcset, poster,
-    <object data>, <link href> other than plain references, and CSS url()."""
+    """URLs the page loads through src, srcset, imagesrcset, poster, <object
+    data>, <link href> other than plain references, and CSS url() in style
+    attributes and <style> elements; not CSS @import or SVG href."""
 
     REFERENCES = {"alternate", "canonical", "author", "license", "me"}
 

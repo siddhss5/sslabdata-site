@@ -47,7 +47,7 @@ section.
   (counts, literal paths, HTML built by `work_link.html`, URLs from
   `safe_url.html`) are listed, never a data field.
   `tests/test_site_template_source.py` fails on any output that is neither
-  escaped nor listed, in every template except `_includes/head.html`, a copy of the theme's that prints only site settings.
+  escaped nor listed, in the top-level `_includes/*.html` and the pages, except `_includes/head.html`, the theme copy that prints only site settings.
 - **Only http, https and mailto links.** A URL from the data file becomes a
   link only through [`site/_includes/safe_url.html`](site/_includes/safe_url.html),
   which drops any other scheme and any relative path.
