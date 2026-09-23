@@ -6,6 +6,7 @@ __pycache__/
 # Generated site data and config (see README)
 site/_data/lab.yml
 site/_config.generated.yml
+site/_entities/
 
 # Jekyll build artifacts
 _site/

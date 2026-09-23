@@ -19,7 +19,6 @@ import pytest
 
 REPO_ROOT = Path(__file__).parent.parent
 AUTHOR_LIST = REPO_ROOT / "site" / "_includes" / "author_list.html"
-PROJECTS = REPO_ROOT / "site" / "_pages" / "projects.md"
 
 STAR = "{% if author.equal_contribution %}<sup>*</sup>{% endif %}"
 MARKED = '| where: "equal_contribution", true'
@@ -36,15 +35,6 @@ def test_author_list_source_stars_marked_authors():
 def test_author_list_source_notes_equal_contribution():
     """The note is written once per list, and only when somebody is marked."""
     source = AUTHOR_LIST.read_text(encoding="utf-8")
-    assert MARKED in source, source
-    assert "{% if equal_authors.size > 0 %}" in source, source
-    assert source.count(NOTE) == 1, source
-
-
-def test_projects_page_source_stars_and_notes_marked_authors():
-    """The projects page repeats both in its own author loop."""
-    source = PROJECTS.read_text(encoding="utf-8")
-    assert STAR in source, source
     assert MARKED in source, source
     assert "{% if equal_authors.size > 0 %}" in source, source
     assert source.count(NOTE) == 1, source

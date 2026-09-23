@@ -1,0 +1,20 @@
+{%- comment -%}
+A project's page, written by scripts/generate_pages.py. The data records who
+published in a project, not who is a member of it, so the people are called
+published contributors.
+
+Unescaped outputs. Every output not listed here is escaped.
+- `url`: a URL captured from safe_url.html, which escapes it.
+- `'/people/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
+{%- endcomment -%}
+<h2>{{ page.project.title | escape }}</h2>
+{% if page.project.description %}<p>{{ page.project.description | escape }}</p>{% endif %}
+{% capture url %}{% include safe_url.html url=page.project.website %}{% endcapture %}{% if url != "" %}<p><a href="{{ url }}">Website</a></p>{% endif %}
+{% if page.people.size > 0 %}
+<h3>Published contributors</h3>
+<ul>{% for p in page.people %}<li><a href="{{ '/people/' | relative_url }}{{ p.id | escape }}/">{{ p.name | escape }}</a></li>{% endfor %}</ul>
+{% endif %}
+{% if page.works.size > 0 %}
+<h3>Works</h3>
+{% for pub in page.works %}{% include publication.html pub=pub %}{% endfor %}
+{% endif %}

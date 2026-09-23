@@ -8,7 +8,8 @@ classes: wide
 {%- comment -%}
 Unescaped outputs. Every output not listed here is escaped.
 - `collaborators.size`: a count Liquid computes, not a string from the data file.
-- `url`: a URL captured from safe_url.html, which escapes it.
+- `'/people/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
+- `'/coauthors/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
 {%- endcomment -%}
 
 {% assign people = site.data.lab.people %}
@@ -27,7 +28,7 @@ Unescaped outputs. Every output not listed here is escaped.
 {% if pi %}
 ## Principal Investigator
 
-<p><span id="{{ pi.id | escape }}">{% capture url %}{% include safe_url.html url=pi.website %}{% endcapture %}{% if url != "" %}<a href="{{ url }}">{{ pi.name | escape }}</a>{% else %}{{ pi.name | escape }}{% endif %}</span></p>
+<p><span id="{{ pi.id | escape }}"><a href="{{ '/people/' | relative_url }}{{ pi.id | escape }}/">{{ pi.name | escape }}</a></span></p>
 {% endif %}
 
 {% if current_phd.size > 0 %}
@@ -36,7 +37,7 @@ Unescaped outputs. Every output not listed here is escaped.
 <table>
 <thead><tr><th>Name</th><th>Co-advisor</th><th>Thesis</th><th>Started</th></tr></thead>
 <tbody>
-{% for p in current_phd %}<tr><td><span id="{{ p.id | escape }}">{% capture url %}{% include safe_url.html url=p.website %}{% endcapture %}{% if url != "" %}<a href="{{ url }}">{{ p.name | escape }}</a>{% else %}{{ p.name | escape }}{% endif %}</span></td><td>{{ p.co_advisor | escape }}</td><td>{{ p.thesis_title | escape }}</td><td>{{ p.start_year | escape }}</td></tr>
+{% for p in current_phd %}<tr><td><span id="{{ p.id | escape }}"><a href="{{ '/people/' | relative_url }}{{ p.id | escape }}/">{{ p.name | escape }}</a></span></td><td>{{ p.co_advisor | escape }}</td><td>{{ p.thesis_title | escape }}</td><td>{{ p.start_year | escape }}</td></tr>
 {% endfor %}</tbody>
 </table>
 {% endif %}
@@ -47,7 +48,7 @@ Unescaped outputs. Every output not listed here is escaped.
 <table>
 <thead><tr><th>Name</th><th>Co-advisor</th><th>Thesis</th><th>Started</th></tr></thead>
 <tbody>
-{% for p in current_ms %}<tr><td><span id="{{ p.id | escape }}">{% capture url %}{% include safe_url.html url=p.website %}{% endcapture %}{% if url != "" %}<a href="{{ url }}">{{ p.name | escape }}</a>{% else %}{{ p.name | escape }}{% endif %}</span></td><td>{{ p.co_advisor | escape }}</td><td>{{ p.thesis_title | escape }}</td><td>{{ p.start_year | escape }}</td></tr>
+{% for p in current_ms %}<tr><td><span id="{{ p.id | escape }}"><a href="{{ '/people/' | relative_url }}{{ p.id | escape }}/">{{ p.name | escape }}</a></span></td><td>{{ p.co_advisor | escape }}</td><td>{{ p.thesis_title | escape }}</td><td>{{ p.start_year | escape }}</td></tr>
 {% endfor %}</tbody>
 </table>
 {% endif %}
@@ -61,7 +62,7 @@ Unescaped outputs. Every output not listed here is escaped.
 <table>
 <thead><tr><th>Name</th><th>Period</th><th>Current Position</th></tr></thead>
 <tbody>
-{% for p in alumni_postdoc %}<tr><td><span id="{{ p.id | escape }}">{% capture url %}{% include safe_url.html url=p.website %}{% endcapture %}{% if url != "" %}<a href="{{ url }}">{{ p.name | escape }}</a>{% else %}{{ p.name | escape }}{% endif %}</span></td><td>{{ p.start_year | escape }}–{{ p.end_year | escape }}</td><td>{{ p.current_position | escape }}</td></tr>
+{% for p in alumni_postdoc %}<tr><td><span id="{{ p.id | escape }}"><a href="{{ '/people/' | relative_url }}{{ p.id | escape }}/">{{ p.name | escape }}</a></span></td><td>{{ p.start_year | escape }}–{{ p.end_year | escape }}</td><td>{{ p.current_position | escape }}</td></tr>
 {% endfor %}</tbody>
 </table>
 {% endif %}
@@ -72,7 +73,7 @@ Unescaped outputs. Every output not listed here is escaped.
 <table>
 <thead><tr><th>Name</th><th>Co-advisor</th><th>Thesis</th><th>Period</th><th>Current Position</th></tr></thead>
 <tbody>
-{% for p in alumni_phd %}<tr><td><span id="{{ p.id | escape }}">{% capture url %}{% include safe_url.html url=p.website %}{% endcapture %}{% if url != "" %}<a href="{{ url }}">{{ p.name | escape }}</a>{% else %}{{ p.name | escape }}{% endif %}</span></td><td>{{ p.co_advisor | escape }}</td><td>{{ p.thesis_title | escape }}</td><td>{{ p.start_year | escape }}–{{ p.end_year | escape }}</td><td>{{ p.current_position | escape }}</td></tr>
+{% for p in alumni_phd %}<tr><td><span id="{{ p.id | escape }}"><a href="{{ '/people/' | relative_url }}{{ p.id | escape }}/">{{ p.name | escape }}</a></span></td><td>{{ p.co_advisor | escape }}</td><td>{{ p.thesis_title | escape }}</td><td>{{ p.start_year | escape }}–{{ p.end_year | escape }}</td><td>{{ p.current_position | escape }}</td></tr>
 {% endfor %}</tbody>
 </table>
 {% endif %}
@@ -83,7 +84,7 @@ Unescaped outputs. Every output not listed here is escaped.
 <table>
 <thead><tr><th>Name</th><th>Co-advisor</th><th>Thesis</th><th>Period</th><th>Current Position</th></tr></thead>
 <tbody>
-{% for p in alumni_ms %}<tr><td><span id="{{ p.id | escape }}">{% capture url %}{% include safe_url.html url=p.website %}{% endcapture %}{% if url != "" %}<a href="{{ url }}">{{ p.name | escape }}</a>{% else %}{{ p.name | escape }}{% endif %}</span></td><td>{{ p.co_advisor | escape }}</td><td>{{ p.thesis_title | escape }}</td><td>{{ p.start_year | escape }}–{{ p.end_year | escape }}</td><td>{{ p.current_position | escape }}</td></tr>
+{% for p in alumni_ms %}<tr><td><span id="{{ p.id | escape }}"><a href="{{ '/people/' | relative_url }}{{ p.id | escape }}/">{{ p.name | escape }}</a></span></td><td>{{ p.co_advisor | escape }}</td><td>{{ p.thesis_title | escape }}</td><td>{{ p.start_year | escape }}–{{ p.end_year | escape }}</td><td>{{ p.current_position | escape }}</td></tr>
 {% endfor %}</tbody>
 </table>
 {% endif %}
@@ -98,7 +99,7 @@ Unescaped outputs. Every output not listed here is escaped.
 <details>
 <summary style="cursor: pointer; font-size: 1.17em; font-weight: bold; margin-bottom: 0.5em;">{{ collaborators.size }} co-authors</summary>
 <div style="margin-top: 0.8em; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.3em 2em;">
-{% for c in collaborators %}<div style="font-size: 0.9em;">{{ c.name | escape }}</div>
+{% for c in collaborators %}<div style="font-size: 0.9em;"><a href="{{ '/coauthors/' | relative_url }}{{ c.key | escape }}/">{{ c.name | escape }}</a></div>
 {% endfor %}
 </div>
 </details>
