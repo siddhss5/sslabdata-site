@@ -5,6 +5,7 @@ Unescaped outputs. Every output not listed here is escaped.
 - `url`: a URL captured from safe_url.html, which escapes it.
 - `'/projects/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
 - `'/coauthors/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
+- `'/people/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
 {%- endcomment -%}
 {% capture url %}{% include safe_url.html url=page.person.website %}{% endcapture %}{% if url != "" %}<p><a href="{{ url }}">Website</a></p>{% endif %}
 {% if page.projects.size > 0 %}
@@ -17,5 +18,6 @@ Unescaped outputs. Every output not listed here is escaped.
 {% endif %}
 {% if page.works.size > 0 %}
 <h3>Works</h3>
+<p><a href="{{ '/people/' | relative_url }}{{ page.person.id | escape }}.bib" download>BibTeX of these works (.bib)</a></p>
 {% for pub in page.works %}{% include publication.html pub=pub %}{% endfor %}
 {% endif %}
