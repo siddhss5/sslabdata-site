@@ -49,7 +49,9 @@ def test_author_list_source_notes_equal_contribution():
 #   {%- endcomment -%}
 #
 # The templates are the source of truth; this test only holds them to it.
-TEMPLATES = sorted((REPO_ROOT / "site" / "_includes").glob("*.html")) + \
+# head.html is a copy of the theme's, which prints only site settings, not data.
+TEMPLATES = sorted(p for p in (REPO_ROOT / "site" / "_includes").glob("*.html")
+                   if p.name != "head.html") + \
     sorted((REPO_ROOT / "site" / "_pages").glob("*.md"))
 COMMENT = re.compile(r"\{%-?\s*comment\s*-?%\}(.*?)\{%-?\s*endcomment\s*-?%\}", re.DOTALL)
 OUTPUT = re.compile(r"\{\{-?\s*(.*?)\s*-?\}\}", re.DOTALL)

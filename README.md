@@ -20,7 +20,7 @@ is not the owner's real lab site.
 
 | Path | What it is |
 |------|------------|
-| [`site/`](site/) | The Jekyll site: `_config.yml`, `_pages/`, `_includes/`, `_data/navigation.yml`, and the `Gemfile` / `Gemfile.lock` that pin Jekyll |
+| [`site/`](site/) | The Jekyll site: `_config.yml`, `_pages/`, `_includes/`, `_data/navigation.yml`, and the `Gemfile` / `Gemfile.lock` that pin Jekyll; `_includes/head.html` is a copy of the theme's without its Font Awesome CDN load; re-check it when upgrading the theme |
 | [`demo/`](demo/) | Example Lab's `lab.yaml`, `people.yaml`, `projects.yaml`, `collaborators.yaml` and `bib/` |
 | [`scripts/generate_site_config.py`](scripts/generate_site_config.py) | Writes the Jekyll settings that come from `lab.yaml` to `site/_config.generated.yml` |
 | [`scripts/generate_pages.py`](scripts/generate_pages.py) | Writes a page for every work, person, project and co-author in the data file to `site/_entities/`, each linking to the others it names |
@@ -47,7 +47,7 @@ section.
   (counts, literal paths, HTML built by `work_link.html`, URLs from
   `safe_url.html`) are listed, never a data field.
   `tests/test_site_template_source.py` fails on any output that is neither
-  escaped nor listed.
+  escaped nor listed, in the top-level `_includes/*.html` and the pages, except `_includes/head.html`, the theme copy that prints only site settings.
 - **Only http, https and mailto links.** A URL from the data file becomes a
   link only through [`site/_includes/safe_url.html`](site/_includes/safe_url.html),
   which drops any other scheme and any relative path.
