@@ -16,8 +16,11 @@ from pathlib import Path
 import yaml
 
 
-# Literal titles, not data strings: the theme reads a page title as Markdown.
-TITLES = {"work": "Work", "person": "Person", "project": "Project", "coauthor": "Co-author"}
+def literal(s):
+    """`s` as a page title: the theme reads a title as Markdown and does not
+    escape it, so every character but letters, digits and spaces is written as
+    an HTML character reference, which Markdown and HTML both show as text."""
+    return "".join(c if c.isalnum() or c == " " else f"&#{ord(c)};" for c in s)
 
 
 def main(data_file, out_dir):
@@ -36,28 +39,29 @@ def main(data_file, out_dir):
     def names(entities, key, ids):
         return [{key: e[key], "name": e.get("name") or e.get("title")} for e in entities if e[key] in ids]
 
-    pages = [("publications", w["bib_id"], "work", {"work": w}) for w in works.values()]
+    pages = [("publications", w["bib_id"], "work", w["title"], {"work": w}) for w in works.values()]
     for p in people:
         in_projects = [x["id"] for x in projects if p["id"] in (x.get("people_ids") or [])]
-        pages.append(("people", p["id"], "person", {
+        pages.append(("people", p["id"], "person", p["name"], {
             "person": p, "works": works_of(p),
             "projects": names(projects, "id", in_projects),
             "coauthors": names(coauthors, "key", authors(works_of(p), "collaborator_key"))}))
     for x in projects:
-        pages.append(("projects", x["id"], "project", {
+        pages.append(("projects", x["id"], "project", x["title"], {
             "project": x, "works": works_of(x),
             "people": names(people, "id", x.get("people_ids") or [])}))
     for c in coauthors:
-        pages.append(("coauthors", c["key"], "coauthor", {
+        pages.append(("coauthors", c["key"], "coauthor", c["name"], {
             "coauthor": c, "works": works_of(c),
+            "also_written_as": [v for v in c.get("name_variants") or [] if v != c["name"]],
             "people": names(people, "id", authors(works_of(c), "person_id"))}))
 
     out = Path(out_dir)
     shutil.rmtree(out, ignore_errors=True)
-    for section, id_, kind, data in pages:
+    for section, id_, kind, title, data in pages:
         path = out / section / f"{id_}.html"
         path.parent.mkdir(parents=True, exist_ok=True)
-        front = {"title": TITLES[kind], "permalink": f"/{section}/{id_}/", **data}
+        front = {"title": literal(title), "permalink": f"/{section}/{id_}/", **data}
         path.write_text("---\n" + yaml.safe_dump(front, allow_unicode=True, sort_keys=False)
                         + f"---\n{{% include {kind}_page.html %}}\n", encoding="utf-8")
 

@@ -6,7 +6,6 @@ Unescaped outputs. Every output not listed here is escaped.
 - `'/projects/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
 - `'/coauthors/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
 {%- endcomment -%}
-<h2>{{ page.person.name | escape }}</h2>
 {% capture url %}{% include safe_url.html url=page.person.website %}{% endcapture %}{% if url != "" %}<p><a href="{{ url }}">Website</a></p>{% endif %}
 {% if page.projects.size > 0 %}
 <h3>Projects</h3>
