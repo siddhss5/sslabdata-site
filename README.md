@@ -20,7 +20,7 @@ is not the owner's real lab site.
 
 | Path | What it is |
 |------|------------|
-| [`site/`](site/) | The Jekyll site: `_config.yml`, `_pages/`, `_includes/`, `_data/navigation.yml`, `assets/js/works-filter.js`, `feed.xml` (an Atom feed of the works, where the theme's footer and head link), and the `Gemfile` / `Gemfile.lock` that pin Jekyll; `_includes/head.html` is a copy of the theme's without its Font Awesome CDN load; re-check it when upgrading the theme |
+| [`site/`](site/) | The Jekyll site: `_config.yml`, `_pages/`, `_includes/`, `_data/navigation.yml`, `assets/js/works-filter.js`, `feed.xml` (an Atom feed of the works that have a year, where the theme's footer and head link), and the `Gemfile` / `Gemfile.lock` that pin Jekyll; `_includes/head.html` is a copy of the theme's without its Font Awesome CDN load; re-check it when upgrading the theme |
 | [`demo/`](demo/) | Example Lab's `lab.yaml`, `people.yaml`, `projects.yaml`, `collaborators.yaml` and `bib/` |
 | [`scripts/generate_site_config.py`](scripts/generate_site_config.py) | Writes the Jekyll settings that come from `lab.yaml` to `site/_config.generated.yml` |
 | [`scripts/generate_pages.py`](scripts/generate_pages.py) | Writes a page for every work, person, project and co-author in the data file to `site/_entities/`, each linking to the others it names, the co-author graph page, and a `.bib` of each person's and project's works, their `bibtex` fields unchanged |
@@ -68,7 +68,14 @@ section.
   a plain script with no library, reveals a form that filters the list by
   year, type (the work's `category`), project (`project_ids`), person (an
   author's `person_id`) and text, and keeps the filters in the URL
-  (`?year=2021&person=hhughes`), so a filtered view can be shared.
+  (`?year=2021&person=hhughes`), so a filtered view can be shared. Works with
+  no year are listed last, under "Undated", which the year filter does not offer.
+- **An id is a path segment as it is.** Each page's path is its entity's id,
+  unchanged, so `generate_pages.py` refuses a document with an id that does
+  not match `[A-Za-z0-9][A-Za-z0-9._:-]*` or that contains `..` or a `:`
+  followed by a letter (Jekyll turns `..` into a separator and reads `:name`
+  as a permalink placeholder), or whose `schema_version` is not the one the
+  pinned sslabdata writes, before it writes anything.
 - **The co-author graph is a picture of its table.** `/coauthor-graph/` draws
   a line between each lab member and each co-author who share a work, as SVG
   with no script, and lists the same pairs, with the number of works they

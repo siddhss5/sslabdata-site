@@ -1,7 +1,9 @@
 """Build the Jekyll site from a fixture data file and check the HTML it writes.
 
-The fixture is a hand-written sslabdata document whose strings carry HTML and
-Markdown, and whose links cover each origin and verification status. The site
+The fixture is the demo document the pinned sslabdata emits, with strings
+that carry HTML and Markdown and links that cover each origin and verification
+status put in place of the demo's; tests that need other hostile input change
+fields of the same document. The site
 is copied to a temporary directory with the fixture as `_data/lab.yml` and
 built with the pinned gems (`site/Gemfile.lock`). The theme is switched off so
 the checks cover only this repository. In its place a stub `single` layout
@@ -24,6 +26,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -64,64 +67,66 @@ def link(url, origin, status):
             "verification": {"status": status, "checked_at": None}}
 
 
-def work(bib_id, title, links, note=None):
-    return {
-        "bib_id": bib_id, "title": title, "year": 2024,
-        "authors": [{"name": PERSON_NAME, "person_id": "ada"},
-                    {"name": "<u>Grace</u> Hopper", "person_id": None}],
-        "venue": {"kind": "journal", "name": "*Journal* <em>of</em> Tests"},
-        "category": "<b>Journal</b> Papers", "note": note,
-        "abstract": "An abstract with <img src=x onerror=alert(2)>.",
-        "links": links, "project_ids": ["demo"], "bibtex": "@article{x}",
-    }
+# Entities of the demo document that the fixture gives hostile values.
+SCRIPT, PLAIN, MISSING = "brown2025tidy", "davis2025handover", "fischer2025benchmark"
+ADA, PI, PROJECT, COLLAB = "bbrown", "aadams", "homebot", "trent-turner-62d45583"
+# A person the fixture adds with no works, as a new member would have.
+NEWCOMER = "newcomer"
 
 
-FIXTURE = {
-    "lab": {"name": "Fixture <Lab>", "department": "*Dept*",
-            "university": "U & U", "description": "<b>desc</b>",
-            "website": GOOD_URLS[0], "github": BAD_URLS[3], "youtube": BAD_URLS[1]},
-    "works": [
-        work("script2024", SCRIPT_TITLE, note=NOTE, links={
+def fixture_document(document):
+    """The demo document the pinned sslabdata emits, with its strings, links
+    and URLs replaced by hostile input and some roles changed so that the
+    People page groups cover roles a fixed list would drop."""
+    works = {w["bib_id"]: w for w in document["works"]}
+    people = {p["id"]: p for p in document["people"]}
+    projects = {x["id"]: x for x in document["projects"]}
+    coauthors = {c["key"]: c for c in document["collaborators"]}
+    document["lab"].update({"name": "Fixture <Lab>", "department": "*Dept*",
+                            "university": "U & U", "description": "<b>desc</b>",
+                            "website": GOOD_URLS[0], "github": BAD_URLS[3], "youtube": BAD_URLS[1]})
+    for bib_id, title, note, links in [
+        (SCRIPT, SCRIPT_TITLE, NOTE, {
             "pdf": [link(PDF_UNCHECKED, "derived", "unchecked")],
             "doi": [link(DOI_UNCHECKED, "derived", "unchecked")],
             "arxiv": [link(SIDECAR_UNCHECKED, "sidecar", "unchecked"),
                       link(ARXIV_UNCHECKED, "derived", "unchecked")],
             "video": [link(INPUT_UNCHECKED, "input", "unchecked")],
-            "url": [link(BAD_URLS[0], "input", "unchecked")],
-        }),
-        work("plain2024", "A plain title", links={
+            "url": [link(BAD_URLS[0], "input", "unchecked")]}),
+        (PLAIN, "A plain title", None, {
             "pdf": [link(PDF_VERIFIED, "derived", "verified")],
             "doi": [link(GOOD_URLS[1], "derived", "unchecked")],
             "url": [link(INPUT_VERIFIED, "input", "verified")],
-            "video": [link(INPUT_VERIFIED, "input", "verified")],
-        }),
-        work("missing2024", "An input link nobody found", links={
+            "video": [link(INPUT_VERIFIED, "input", "verified")]}),
+        (MISSING, "An input link nobody found", None, {
             "pdf": [link(PDF_MISSING, "derived", "missing")],
             "url": [link(INPUT_MISSING_WEB, "input", "missing")],
-            "video": [link(INPUT_MISSING, "input", "missing")],
-        }),
-    ],
-    "people": [
-        {"id": "ada", "name": PERSON_NAME, "role": "phd_student",
-         "status": "current", "thesis_title": "*Thesis* <b>x</b>",
-         "co_advisor": "<i>Someone</i>", "start_year": 2020,
-         "website": BAD_URLS[2]},
-        {"id": "pi", "name": "<b>The</b> *PI*", "role": "professor",
-         "status": "current", "website": GOOD_URLS[2]},
-        # Roles and statuses a fixed list of groups would drop.
-        {"id": "visitor", "name": "Vera Visitor", "role": "visiting_scholar", "status": "current"},
-        {"id": "postdoc", "name": "Paul Postdoc", "role": "postdoc", "status": "current"},
-        {"id": "emeritus", "name": "Emma Emeritus", "role": "professor", "status": "alumni"},
-        {"id": "engineer", "name": "Eli Engineer", "role": "engineer", "status": "current"},
-    ],
-    "projects": [
-        {"id": "demo", "title": "*Project* <b>One</b>",
-         "description": "Project _description_ <script>x</script>",
-         "status": "active", "website": BAD_URLS[4], "work_ids": ["script2024", "plain2024", "missing2024"]},
-    ],
-    # Optional fields are left out or null: no work_ids or people_ids.
-    "collaborators": [{"key": "collab", "name": "<b>Collab</b> *Orator*", "work_ids": None}],
-}
+            "video": [link(INPUT_MISSING, "input", "missing")]}),
+    ]:
+        works[bib_id].update({"title": title, "note": note, "links": links,
+                              "category": "<b>Journal</b> Papers",
+                              "abstract": "An abstract with <img src=x onerror=alert(2)>."})
+        works[bib_id]["venue"]["name"] = "*Journal* <em>of</em> Tests"
+    for w in works.values():
+        for a in w["authors"]:
+            if a["person_id"] == ADA:
+                a["name"] = PERSON_NAME
+            if a["collaborator_key"] == COLLAB:
+                a["name"] = "<u>Grace</u> Hopper"
+    people[ADA].update({"name": PERSON_NAME, "thesis_title": "*Thesis* <b>x</b>",
+                        "co_advisor": "<i>Someone</i>", "website": BAD_URLS[2]})
+    people[PI].update({"name": "<b>The</b> *PI*", "website": GOOD_URLS[2]})
+    # Roles a fixed list of groups would drop, and a professor among the alumni.
+    people["ffischer"]["role"] = "engineer"
+    people["ggreen"]["role"] = "visiting_scholar"
+    people["iingram"]["role"] = "professor"
+    document["people"].append({**people["eevans"], "id": NEWCOMER, "name": "Nadia Newcomer",
+                               "work_count": 0, "work_ids": []})
+    projects[PROJECT].update({"title": "*Project* <b>One</b>",
+                              "description": "Project _description_ <script>x</script>",
+                              "status": "active", "website": BAD_URLS[4]})
+    coauthors[COLLAB]["name"] = "<b>Collab</b> *Orator*"
+    return document
 
 
 # People groups for the fixture build. `professor` and `engineer` are each
@@ -212,6 +217,10 @@ def demo_data(tmp):
                    check=True, cwd=REPO_ROOT)
     people_groups = yaml.safe_load(config.read_text(encoding="utf-8"))["people_groups"]
     return data.read_text(encoding="utf-8"), people_groups
+
+
+with tempfile.TemporaryDirectory() as _tmp:
+    FIXTURE = fixture_document(yaml.safe_load(demo_data(Path(_tmp))[0]))
 
 
 @pytest.fixture(scope="module")
@@ -338,7 +347,8 @@ def test_works_not_publications(built):
     for path in PAGES + ["people"]:
         assert '<a href="/publications/">Works</a>' in page(built, path), path
     assert "Recent Works" in page(built, "")
-    assert "Works (3)</summary>" in page(built, "projects")
+    project = next(x for x in FIXTURE["projects"] if x["id"] == PROJECT)
+    assert f"Works ({len(project['work_ids'])})</summary>" in page(built, "projects")
 
 
 def test_demo_shows_identifier_links_and_hides_guessed_pdfs(demo):
@@ -426,9 +436,9 @@ def test_demo_entity_pages_are_titled_by_their_entity(demo):
 
 
 def test_fixture_entity_titles_are_literal_text(built):
-    for path, name in [("people/ada", PERSON_NAME), ("publications/script2024", SCRIPT_TITLE),
-                       ("projects/demo", "*Project* <b>One</b>"),
-                       ("coauthors/collab", "<b>Collab</b> *Orator*")]:
+    for path, name in [(f"people/{ADA}", PERSON_NAME), (f"publications/{SCRIPT}", SCRIPT_TITLE),
+                       (f"projects/{PROJECT}", "*Project* <b>One</b>"),
+                       (f"coauthors/{COLLAB}", "<b>Collab</b> *Orator*")]:
         assert_titled(page(built, path), name)
 
 
@@ -472,19 +482,31 @@ def test_every_person_appears_exactly_once_on_the_people_page(site, request):
     assert sorted(shown) == sorted(p["id"] for p in people)
 
 
+def fixture_ids(status, role):
+    return [p["id"] for p in FIXTURE["people"] if p["status"] == status and p["role"] == role]
+
+
 def test_people_groups_title_and_order_and_show_each_role_once(built):
+    ids = fixture_ids
     assert people_sections(built) == [
-        ("Faculty", ["pi"]), ("Research Staff", ["engineer"]),
-        ("Phd Student", ["ada"]), ("Visiting Scholar", ["visitor"]), ("Postdoc", ["postdoc"]),
-        ("Alumni", []), ("Faculty", ["emeritus"]),
+        ("Faculty", ids("current", "professor")), ("Research Staff", ids("current", "engineer")),
+        ("Phd Student", ids("current", "phd_student")),
+        ("Visiting Scholar", ids("current", "visiting_scholar")),
+        ("Alumni", []), ("Faculty", ids("alumni", "professor")),
+        ("Phd Student", ids("alumni", "phd_student")), ("Postdoc", ids("alumni", "postdoc")),
+        ("Ms Student", ids("alumni", "ms_student")),
     ]
 
 
 def test_without_people_groups_each_role_is_titled_from_its_name(unconfigured):
+    ids = fixture_ids
     assert people_sections(unconfigured) == [
-        ("Phd Student", ["ada"]), ("Professor", ["pi"]), ("Visiting Scholar", ["visitor"]),
-        ("Postdoc", ["postdoc"]), ("Engineer", ["engineer"]),
-        ("Alumni", []), ("Professor", ["emeritus"]),
+        ("Professor", ids("current", "professor")), ("Phd Student", ids("current", "phd_student")),
+        ("Engineer", ids("current", "engineer")),
+        ("Visiting Scholar", ids("current", "visiting_scholar")),
+        ("Alumni", []), ("Professor", ids("alumni", "professor")),
+        ("Phd Student", ids("alumni", "phd_student")), ("Postdoc", ids("alumni", "postdoc")),
+        ("Ms Student", ids("alumni", "ms_student")),
     ]
 
 

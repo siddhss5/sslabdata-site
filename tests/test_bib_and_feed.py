@@ -3,9 +3,9 @@
 Each person and project page with works links to a .bib holding exactly the
 BibTeX of the works it lists, byte for byte as the data file carries it; the
 feed at /feed.xml, which the theme's footer and head link to, is Atom and
-lists every work, newest first. The built-site checks reuse the builds in
-test_site_build.py and are skipped with them when Bundler or the pinned
-Jekyll is not installed.
+lists every work that has a year, newest first. The built-site checks reuse
+the builds in test_site_build.py and are skipped with them when Bundler or the
+pinned Jekyll is not installed.
 """
 
 import copy
@@ -16,7 +16,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from test_site_build import FIXTURE, REPO_ROOT, build, demo, demo_data, page  # noqa: F401
+from test_site_build import FIXTURE, NEWCOMER, PI, PLAIN, REPO_ROOT, build, demo, demo_data, page  # noqa: F401
 from test_site_template_source import allowlist, unescaped_outputs, unsafe_link_targets
 
 ATOM = "{http://www.w3.org/2005/Atom}"
@@ -51,9 +51,16 @@ def check_bibs(built, document, keys_are_ids=False):
     assert checked
 
 
+# An Atom date: the feed dates each work by the first day of its year.
+DATE = re.compile(r"\d{4}-01-01T00:00:00Z")
+
+
 def feed_entries(built):
     root = ET.parse(built / "feed.xml").getroot()
     assert root.tag == ATOM + "feed"
+    assert DATE.fullmatch(root.findtext(ATOM + "updated"))
+    for e in root.findall(ATOM + "entry"):
+        assert DATE.fullmatch(e.findtext(ATOM + "updated")), e.findtext(ATOM + "id")
     return [{"id": e.findtext(ATOM + "id"), "title": e.findtext(ATOM + "title"),
              "link": e.find(ATOM + "link").get("href"),
              "authors": [a.findtext(ATOM + "name") for a in e.findall(ATOM + "author")],
@@ -62,7 +69,7 @@ def feed_entries(built):
 
 def check_feed(built, document, url):
     entries = feed_entries(built)
-    works = {w["bib_id"]: w for w in document["works"]}
+    works = {w["bib_id"]: w for w in document["works"] if w["year"] is not None}
     ids = [e["id"].removeprefix(f"{url}/publications/").removesuffix("/") for e in entries]
     assert sorted(ids) == sorted(works)
     years = [works[i]["year"] for i in ids]
@@ -78,12 +85,9 @@ def check_feed(built, document, url):
 
 @pytest.fixture(scope="module")
 def tricky(tmp_path_factory):
-    """The fixture, with a person who has works and BibTeX that is hard to
-    copy unchanged."""
+    """The fixture, with a work whose BibTeX is hard to copy unchanged."""
     document = copy.deepcopy(FIXTURE)
-    document["works"][1]["bibtex"] = TRICKY_BIBTEX
-    document["people"][0]["work_ids"] = ["plain2024", "script2024"]
-    document["projects"][0]["work_ids"] = [w["bib_id"] for w in document["works"]]
+    next(w for w in document["works"] if w["bib_id"] == PLAIN)["bibtex"] = TRICKY_BIBTEX
     built = build(tmp_path_factory.mktemp("tricky"), yaml.safe_dump(document, allow_unicode=True))
     return built, document
 
@@ -103,8 +107,8 @@ def test_demo_bibs_hold_exactly_the_works_each_page_lists(demo):
 def test_bibs_copy_bibtex_byte_for_byte(tricky):
     built, document = tricky
     check_bibs(built, document)
-    assert TRICKY_BIBTEX in (built / "people" / "ada.bib").read_bytes().decode("utf-8")
-    assert not (built / "people" / "pi.bib").exists()
+    assert TRICKY_BIBTEX in (built / "people" / f"{PI}.bib").read_bytes().decode("utf-8")
+    assert not (built / "people" / f"{NEWCOMER}.bib").exists()
 
 
 def test_demo_feed_lists_every_work_newest_first(demo):
@@ -116,6 +120,24 @@ def test_feed_is_well_formed_and_escapes_the_data(tricky):
     text = (tricky[0] / "feed.xml").read_text(encoding="utf-8")
     assert "<script>" not in text
     assert "&lt;script&gt;alert(1)&lt;/script&gt;" in text
+
+
+@pytest.mark.parametrize("undated", ["one", "every"])
+def test_feed_leaves_out_undated_works_and_stays_valid(undated, tmp_path):
+    document = copy.deepcopy(FIXTURE)
+    for w in document["works"]:
+        if undated == "every" or w["bib_id"] == PLAIN:
+            w["year"] = None
+    built = build(tmp_path, yaml.safe_dump(document, allow_unicode=True))
+    check_feed(built, document, "https://fixture.invalid")
+    root = ET.parse(built / "feed.xml").getroot()
+    if undated == "every":
+        assert root.findall(ATOM + "entry") == []
+        assert root.findtext(ATOM + "updated") == "1970-01-01T00:00:00Z"
+    else:
+        assert f"/publications/{PLAIN}/" not in (built / "feed.xml").read_text(encoding="utf-8")
+        newest = max(w["year"] for w in document["works"] if w["year"] is not None)
+        assert root.findtext(ATOM + "updated") == f"{newest}-01-01T00:00:00Z"
 
 
 def test_theme_footer_and_head_link_to_the_works_feed(themed):

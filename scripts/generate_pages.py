@@ -7,15 +7,27 @@ entity and the entities it links to; every relationship is read from the
 document, and this only joins them. The templates in site/_includes/*_page.html
 lay the pages out.
 
+An entity id becomes a file name and a URL path segment as it is, so the
+generator refuses any id outside ID before it removes or writes anything.
+
 Usage: generate_pages.py site/_data/lab.yml site/_entities
 """
 
 import math
+import re
 import shutil
 import sys
 from pathlib import Path
 
 import yaml
+from sslabdata.models import SCHEMA_VERSION
+
+# An id that Jekyll writes where its links point: no separator, no leading
+# `.` or `_` that would make Jekyll skip the file, nothing a URL would need to
+# escape, no `..`, which Jekyll turns into a separator, and no `:` followed by
+# a letter, which Jekyll reads as a permalink placeholder such as `:path`.
+ID = re.compile(r"(?!.*\.\.)(?!.*:[A-Za-z])[A-Za-z0-9][A-Za-z0-9._:-]*")
+ID_RULE = "an id must match [A-Za-z0-9][A-Za-z0-9._:-]* and contain no `..` or `:` followed by a letter"
 
 
 def literal(s):
@@ -27,10 +39,19 @@ def literal(s):
 
 def main(data_file, out_dir):
     doc = yaml.safe_load(Path(data_file).read_text(encoding="utf-8"))
+    if doc.get("schema_version") != SCHEMA_VERSION:
+        sys.exit(f"{data_file}: schema_version {doc.get('schema_version')!r} is not supported; "
+                 f"this renderer reads schema_version {SCHEMA_VERSION}")
     works = {w["bib_id"]: w for w in doc.get("works") or []}
     people = doc.get("people") or []
     projects = doc.get("projects") or []
     coauthors = doc.get("collaborators") or []
+    for kind, key, entities in [("work", "bib_id", works.values()), ("person", "id", people),
+                                ("project", "id", projects), ("co-author", "key", coauthors)]:
+        for e in entities:
+            if not (isinstance(e[key], str) and ID.fullmatch(e[key])):
+                sys.exit(f"{data_file}: {kind} id {e[key]!r} is not one path segment; "
+                         f"{ID_RULE}")
 
     def works_of(entity):
         return [works[i] for i in entity.get("work_ids") or []]

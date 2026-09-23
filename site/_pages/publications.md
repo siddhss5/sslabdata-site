@@ -8,13 +8,16 @@ classes: wide
 {%- comment -%}
 The full list is in the page, so it is complete without JavaScript.
 works-filter.js reveals the hidden form and shows only the works matching the
-URL's parameters, named as the form's fields.
+URL's parameters, named as the form's fields. Works with no year come last,
+under "Undated", which the Year filter does not offer.
 
 Unescaped outputs. Every output not listed here is escaped.
 - `'/assets/js/works-filter.js' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
 {%- endcomment -%}
 {% assign pubs = site.data.lab.works %}
-{% assign years = pubs | map: "year" | uniq | sort | reverse %}
+{% assign years = pubs | map: "year" | compact | uniq | sort | reverse %}
+{% assign undated = pubs | where_exp: "w", "w.year == nil" %}
+{% assign sections = years %}{% if undated.size > 0 %}{% assign sections = years | push: nil %}{% endif %}
 {% assign types = pubs | map: "category" | uniq | sort %}
 
 <form id="works-filter" hidden style="margin-bottom: 1.5em;">
@@ -26,11 +29,11 @@ Unescaped outputs. Every output not listed here is escaped.
 <div id="works-filter-count" style="margin-top: 0.3em; font-size: 0.85em; color: #666;"></div>
 </form>
 
-{% for year in years %}
+{% for year in sections %}
 <div class="pub-year-section" data-year="{{ year | escape }}">
-<h2>{{ year | escape }}</h2>
+<h2>{{ year | default: "Undated" | escape }}</h2>
 
-{% assign year_pubs = pubs | where: "year", year %}
+{% assign year_pubs = pubs | where_exp: "w", "w.year == year" %}
 {% assign categories = year_pubs | map: "category" | uniq %}
 
 {% for category in categories %}
