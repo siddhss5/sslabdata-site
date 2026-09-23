@@ -12,7 +12,8 @@ page content, which the theme does not produce.
 Before each build, scripts/generate_pages.py writes the entity pages from the
 data file. The same build is also run on the demo document the pinned
 sslabdata emits, to check which of its links are shown and that its entity
-pages link each relationship both ways.
+pages link each relationship both ways. The demo is also built once with the
+theme, to check that no page loads anything from another host.
 
 Skipped when Bundler or the pinned Jekyll is not installed.
 """
@@ -23,7 +24,9 @@ import re
 import shutil
 import subprocess
 import sys
+from html.parser import HTMLParser
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import pytest
 import yaml
@@ -134,7 +137,7 @@ def _jekyll_available():
     return result.returncode == 0
 
 
-def build(tmp, data):
+def build(tmp, data, theme=False):
     """Build a copy of site/ with `data` as _data/lab.yml; return the output."""
     if not _jekyll_available():
         pytest.skip("bundle exec jekyll is not available")
@@ -145,14 +148,15 @@ def build(tmp, data):
     (source / "_data" / "lab.yml").write_text(data, encoding="utf-8")
     subprocess.run([sys.executable, "scripts/generate_pages.py", source / "_data" / "lab.yml",
                     source / "_entities"], check=True, cwd=REPO_ROOT)
-    # Drop the theme, whose layouts these checks do not cover; a later config
-    # file cannot unset it.
-    config = source / "_config.yml"
-    lines = config.read_text(encoding="utf-8").splitlines(keepends=True)
-    config.write_text("".join(l for l in lines if not l.startswith("theme:")),
-                      encoding="utf-8")
-    (source / "_layouts").mkdir()
-    (source / "_layouts" / "single.html").write_text(STUB_LAYOUT, encoding="utf-8")
+    if not theme:
+        # Drop the theme, whose layouts these checks do not cover; a later
+        # config file cannot unset it.
+        config = source / "_config.yml"
+        lines = config.read_text(encoding="utf-8").splitlines(keepends=True)
+        config.write_text("".join(l for l in lines if not l.startswith("theme:")),
+                          encoding="utf-8")
+        (source / "_layouts").mkdir()
+        (source / "_layouts" / "single.html").write_text(STUB_LAYOUT, encoding="utf-8")
     (source / "_config.test.yml").write_text(
         "title: Fixture\nurl: https://fixture.invalid\nbaseurl: ''\n"
         "repository: fixture/fixture\n", encoding="utf-8")
@@ -174,17 +178,22 @@ def built(tmp_path_factory):
                  yaml.safe_dump(FIXTURE, allow_unicode=True))
 
 
-@pytest.fixture(scope="module")
-def demo(tmp_path_factory):
-    """The site built from the demo document the pinned sslabdata emits."""
-    tmp = tmp_path_factory.mktemp("demo")
+def demo_data(tmp):
+    """The demo document the pinned sslabdata emits, as text."""
     data = tmp / "lab.yml"
     result = subprocess.run(
         [str(Path(sys.executable).parent / "sslabdata"), "--config", "demo/lab.yaml",
          "--output", str(data)], capture_output=True, text=True, cwd=REPO_ROOT)
     assert result.returncode == 0, result.stdout + result.stderr
-    document = yaml.safe_load(data.read_text(encoding="utf-8"))
-    return build(tmp, data.read_text(encoding="utf-8")), document
+    return data.read_text(encoding="utf-8")
+
+
+@pytest.fixture(scope="module")
+def demo(tmp_path_factory):
+    """The site built from the demo document the pinned sslabdata emits."""
+    tmp = tmp_path_factory.mktemp("demo")
+    data = demo_data(tmp)
+    return build(tmp, data), yaml.safe_load(data)
 
 
 def page(built, path):
@@ -414,3 +423,56 @@ def test_demo_coauthor_index_links_every_coauthor(demo):
     assert "not a verified person" in text
     for c in document["collaborators"]:
         assert f'<a href="/coauthors/{c["key"]}/">{html.escape(c["name"])}</a>' in text, c["name"]
+
+
+class Loads(HTMLParser):
+    """Every URL a browser fetches to show the page: src, srcset, poster,
+    <object data>, <link href> other than plain references, and CSS url()."""
+
+    REFERENCES = {"alternate", "canonical", "author", "license", "me"}
+
+    def __init__(self):
+        super().__init__()
+        self.urls = []
+        self.in_style = False
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        self.in_style = tag == "style"
+        for name in ("src", "poster"):
+            if attrs.get(name):
+                self.urls.append(attrs[name])
+        for name in ("srcset", "imagesrcset"):
+            self.urls += [c.split()[0] for c in (attrs.get(name) or "").split(",") if c.strip()]
+        if tag == "object" and attrs.get("data"):
+            self.urls.append(attrs["data"])
+        if tag == "link" and attrs.get("href") and \
+                not set((attrs.get("rel") or "").lower().split()) <= self.REFERENCES:
+            self.urls.append(attrs["href"])
+        self.css(attrs.get("style") or "")
+
+    def handle_data(self, data):
+        if self.in_style:
+            self.css(data)
+
+    def handle_endtag(self, tag):
+        self.in_style = False
+
+    def css(self, text):
+        self.urls += re.findall(r"url\(\s*['\"]?([^'\")]+)", text)
+
+
+def test_demo_with_theme_loads_nothing_from_another_host(tmp_path):
+    """Built with the theme, no demo page fetches a resource from a host other
+    than the site's own, and none names an unpinned @latest version."""
+    built = build(tmp_path, demo_data(tmp_path), theme=True)
+    pages = sorted(built.rglob("*.html"))
+    assert pages
+    for p in pages:
+        text = p.read_text(encoding="utf-8")
+        assert "@latest" not in text, p
+        parser = Loads()
+        parser.feed(text)
+        foreign = [u for u in parser.urls
+                   if urlsplit(u).netloc not in ("", "fixture.invalid")]
+        assert foreign == [], p
