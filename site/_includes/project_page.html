@@ -11,11 +11,11 @@ Unescaped outputs. Every output not listed here is escaped.
 {% if page.project.description %}<p>{{ page.project.description | escape }}</p>{% endif %}
 {% capture url %}{% include safe_url.html url=page.project.website %}{% endcapture %}{% if url != "" %}<p><a href="{{ url }}">Website</a></p>{% endif %}
 {% if page.people.size > 0 %}
-<h3>Published contributors</h3>
+<h2>Published contributors</h2>
 <ul>{% for p in page.people %}<li><a href="{{ '/people/' | relative_url }}{{ p.id | escape }}/">{{ p.name | escape }}</a></li>{% endfor %}</ul>
 {% endif %}
 {% if page.works.size > 0 %}
-<h3>Works</h3>
+<h2>Works</h2>
 <p><a href="{{ '/projects/' | relative_url }}{{ page.project.id | escape }}.bib" download>BibTeX of these works (.bib)</a></p>
 {% for pub in page.works %}{% include publication.html pub=pub %}{% endfor %}
 {% endif %}

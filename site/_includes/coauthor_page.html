@@ -6,11 +6,11 @@ Unescaped outputs. Every output not listed here is escaped.
 {%- endcomment -%}
 {% if page.coauthor.name_variants.size > 1 %}<p>Also written as {{ page.also_written_as | join: "; " | escape }}.</p>{% endif %}
 {% if page.people.size > 0 %}
-<h3>Lab members they wrote with</h3>
+<h2>Lab members they wrote with</h2>
 <ul>{% for p in page.people %}<li><a href="{{ '/people/' | relative_url }}{{ p.id | escape }}/">{{ p.name | escape }}</a></li>{% endfor %}</ul>
 {% endif %}
 {% if page.works.size > 0 %}
-<h3>Works</h3>
+<h2>Works</h2>
 {% for pub in page.works %}{% include publication.html pub=pub %}{% endfor %}
 {% endif %}
 <p><small>This page groups author names by their spelling. It is not a verified person: two people who write their name the same way share one page.</small></p>
