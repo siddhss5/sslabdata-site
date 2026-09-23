@@ -136,6 +136,8 @@ def test_feed_leaves_out_undated_works_and_stays_valid(undated, tmp_path):
         assert root.findtext(ATOM + "updated") == "1970-01-01T00:00:00Z"
     else:
         assert f"/publications/{PLAIN}/" not in (built / "feed.xml").read_text(encoding="utf-8")
+        newest = max(w["year"] for w in document["works"] if w["year"] is not None)
+        assert root.findtext(ATOM + "updated") == f"{newest}-01-01T00:00:00Z"
 
 
 def test_theme_footer_and_head_link_to_the_works_feed(themed):

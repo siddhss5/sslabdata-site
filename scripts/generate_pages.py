@@ -22,9 +22,12 @@ from pathlib import Path
 import yaml
 from sslabdata.models import SCHEMA_VERSION
 
-# An id that is one path segment: no separator, no leading `.` or `_` that
-# would make Jekyll skip the file, and nothing a URL would need to escape.
-ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]*")
+# An id that Jekyll writes where its links point: no separator, no leading
+# `.` or `_` that would make Jekyll skip the file, nothing a URL would need to
+# escape, no `..`, which Jekyll turns into a separator, and no `:` followed by
+# a letter, which Jekyll reads as a permalink placeholder such as `:path`.
+ID = re.compile(r"(?!.*\.\.)(?!.*:[A-Za-z])[A-Za-z0-9][A-Za-z0-9._:-]*")
+ID_RULE = "an id must match [A-Za-z0-9][A-Za-z0-9._:-]* and contain no `..` or `:` followed by a letter"
 
 
 def literal(s):
@@ -48,7 +51,7 @@ def main(data_file, out_dir):
         for e in entities:
             if not (isinstance(e[key], str) and ID.fullmatch(e[key])):
                 sys.exit(f"{data_file}: {kind} id {e[key]!r} is not one path segment; "
-                         f"an id must match {ID.pattern}")
+                         f"{ID_RULE}")
 
     def works_of(entity):
         return [works[i] for i in entity.get("work_ids") or []]

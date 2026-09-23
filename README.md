@@ -72,8 +72,10 @@ section.
   no year are listed last, under "Undated", which the year filter does not offer.
 - **An id is a path segment as it is.** Each page's path is its entity's id,
   unchanged, so `generate_pages.py` refuses a document with an id that does
-  not match `[A-Za-z0-9][A-Za-z0-9._:-]*`, or whose `schema_version` is not
-  the one the pinned sslabdata writes, before it writes anything.
+  not match `[A-Za-z0-9][A-Za-z0-9._:-]*` or that contains `..` or a `:`
+  followed by a letter (Jekyll turns `..` into a separator and reads `:name`
+  as a permalink placeholder), or whose `schema_version` is not the one the
+  pinned sslabdata writes, before it writes anything.
 - **The co-author graph is a picture of its table.** `/coauthor-graph/` draws
   a line between each lab member and each co-author who share a work, as SVG
   with no script, and lists the same pairs, with the number of works they

@@ -14,6 +14,18 @@ ENTITIES = {"work": ("works", "bib_id", SCRIPT), "person": ("people", "id", ADA)
             "project": ("projects", "id", PROJECT), "co-author": ("collaborators", "key", COLLAB)}
 
 
+def rename(node, old, new):
+    """`node` with every string equal to `old` replaced by `new`, so that an
+    id and every reference to it change together."""
+    if node == old:
+        return new
+    if isinstance(node, dict):
+        return {k: rename(v, old, new) for k, v in node.items()}
+    if isinstance(node, list):
+        return [rename(v, old, new) for v in node]
+    return node
+
+
 def generate(tmp_path, document):
     """Run the generator on `document` into an output directory that already
     holds a page; return the result and that directory."""
@@ -32,7 +44,8 @@ def assert_nothing_written(tmp_path, out):
         ["lab.yml", "site", "site/_entities", "site/_entities/people", "site/_entities/people/old.html"]
 
 
-@pytest.mark.parametrize("id_", ["../../escaped", "a/b", "two words", "Zoë", ".hidden", "_x", "-x", ""])
+@pytest.mark.parametrize("id_", ["../../escaped", "a/b", "two words", "Zoë", ".hidden", "_x", "-x", "",
+                                 "a..b", "x:path", "a:basename", "Smith:robots"])
 @pytest.mark.parametrize("kind", ENTITIES)
 def test_an_id_that_is_not_one_path_segment_is_refused(kind, id_, tmp_path):
     collection, key, old = ENTITIES[kind]
@@ -41,7 +54,18 @@ def test_an_id_that_is_not_one_path_segment_is_refused(kind, id_, tmp_path):
     result, out = generate(tmp_path, document)
     assert result.returncode == 1
     assert f"{kind} id {id_!r} is not one path segment" in result.stderr
+    assert "contain no `..` or `:` followed by a letter" in result.stderr
     assert_nothing_written(tmp_path, out)
+
+
+@pytest.mark.parametrize("id_", ["Smith:2020", "B.Brown"])
+@pytest.mark.parametrize("kind", ENTITIES)
+def test_an_id_jekyll_keeps_as_it_is_is_accepted(kind, id_, tmp_path):
+    result, out = generate(tmp_path, rename(FIXTURE, ENTITIES[kind][2], id_))
+    assert result.returncode == 0, result.stderr
+    section = {"work": "publications", "person": "people", "project": "projects",
+               "co-author": "coauthors"}[kind]
+    assert (out / section / f"{id_}.html").is_file()
 
 
 @pytest.mark.parametrize("version", [SCHEMA_VERSION - 1, SCHEMA_VERSION + 1, None])
