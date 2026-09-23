@@ -11,6 +11,7 @@ Jekyll is not installed.
 import copy
 import re
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 import pytest
 import yaml
@@ -128,7 +129,7 @@ def test_theme_footer_and_head_link_to_the_works_feed(themed):
 def test_themed_build_is_deterministic(themed, tmp_path):
     first, _ = themed
     second = build(tmp_path, *demo_data(tmp_path), theme=True)
-    outputs = sorted(p.relative_to(first) for p in first.rglob("*.bib")) + [first / "feed.xml"]
+    outputs = sorted(p.relative_to(first) for p in first.rglob("*.bib")) + [Path("feed.xml")]
     assert len(outputs) > 1
     for p in outputs:
         assert (first / p).read_bytes() == (second / p).read_bytes(), p
