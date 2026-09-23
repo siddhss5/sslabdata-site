@@ -17,6 +17,7 @@ pages link each relationship both ways.
 Skipped when Bundler or the pinned Jekyll is not installed.
 """
 
+import html
 import os
 import re
 import shutil
@@ -115,10 +116,11 @@ FIXTURE = {
 }
 
 
+# The title is filtered as the theme's seo.html and single.html filter it.
 STUB_LAYOUT = """<!doctype html>
-<title>{{ page.title | escape }}</title>
+<title>{{ page.title | markdownify | strip_html | strip_newlines | escape_once }}</title>
 <nav>{% for item in site.data.navigation.main %}<a href="{{ item.url | relative_url }}">{{ item.title | escape }}</a>{% endfor %}</nav>
-<h1 class="page-title">{{ page.title | escape }}</h1>
+<h1 class="page-title">{{ page.title | markdownify | remove: "<p>" | remove: "</p>" | strip }}</h1>
 {{ content }}
 """
 
@@ -365,3 +367,50 @@ def test_demo_entity_pages_link_both_ways(demo):
         for target in re.findall(r'href="(/[^"#]*)', f.read_text(encoding="utf-8")):
             assert (built / target.lstrip("/") / "index.html").is_file() or \
                 (built / target.lstrip("/")).is_file(), (f, target)
+
+
+def assert_titled(text, name):
+    """The page's title and heading are `name` as escaped text; returns the title."""
+    title = re.search(r"<title>(.*)</title>", text)[1]
+    heading = re.search(r'<h1 class="page-title">(.*)</h1>', text)[1]
+    for shown in (title, heading):
+        assert html.unescape(shown) == name and "<" not in shown, (shown, name)
+    return title
+
+
+def test_demo_entity_pages_are_titled_by_their_entity(demo):
+    """Each entity page's title and heading are its entity's name, escaped, and
+    no two pages of a kind share a title."""
+    built, document = demo
+    for path, key, name, entities in [("publications", "bib_id", "title", document["works"]),
+                                      ("people", "id", "name", document["people"]),
+                                      ("projects", "id", "title", document["projects"]),
+                                      ("coauthors", "key", "name", document["collaborators"])]:
+        titles = [assert_titled(page(built, f"{path}/{e[key]}"), e[name]) for e in entities]
+        assert len(set(titles)) == len(titles) == len(entities), path
+
+
+def test_fixture_entity_titles_are_literal_text(built):
+    for path, name in [("people/ada", PERSON_NAME), ("publications/script2024", SCRIPT_TITLE),
+                       ("projects/demo", "*Project* <b>One</b>"),
+                       ("coauthors/collab", "<b>Collab</b> *Orator*")]:
+        assert_titled(page(built, path), name)
+
+
+def test_demo_coauthor_pages_show_other_spellings_only_when_there_are_some(demo):
+    built, document = demo
+    for c in document["collaborators"]:
+        text = page(built, f"coauthors/{c['key']}")
+        assert "not a verified person" in text, c["name"]
+        if len(c["name_variants"]) == 1:
+            assert "Also written as" not in text, c["name"]
+    priya = next(c for c in document["collaborators"] if c["name"] == "Priya Patel")
+    assert "<p>Also written as P. Patel.</p>" in page(built, f"coauthors/{priya['key']}")
+
+
+def test_demo_coauthor_index_links_every_coauthor(demo):
+    built, document = demo
+    text = page(built, "coauthors")
+    assert "not a verified person" in text
+    for c in document["collaborators"]:
+        assert f'<a href="/coauthors/{c["key"]}/">{html.escape(c["name"])}</a>' in text, c["name"]
