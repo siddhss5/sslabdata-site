@@ -65,8 +65,8 @@ section.
 - **The co-author graph is a picture of its table.** `/coauthor-graph/` draws
   a line between each lab member and each co-author who share a work, as SVG
   with no script, and lists the same pairs, with the number of works they
-  share, in a table. Nodes sit on a circle in a fixed order (lab members by
-  id, co-authors by key), so every build draws the same picture.
+  share, in a table. Nodes sit on a circle in a fixed order (co-authors by
+  key, then lab members by id), so every build draws the same picture.
 
 ## The sslabdata pin
 

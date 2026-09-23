@@ -59,8 +59,8 @@ def main(data_file, out_dir):
             "people": names(people, "id", authors(works_of(c), "person_id"))}))
 
     # Co-author graph: an edge joins a lab member and a co-author who share a
-    # work. Nodes sit on a circle in a fixed order, lab members by id and then
-    # co-authors by key, so the layout is the same on every build.
+    # work. Nodes sit on a circle in a fixed order, co-authors by key, then
+    # lab members by id, so the layout is the same on every build.
     shared = {}
     for w in works.values():
         for a in w.get("authors") or []:
