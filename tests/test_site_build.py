@@ -3,11 +3,11 @@
 The fixture is a hand-written sslabdata document whose strings carry HTML and
 Markdown, and whose links cover each origin and verification status. The site
 is copied to a temporary directory with the fixture as `_data/lab.yml` and
-built with the pinned gems (`site/Gemfile.lock`). The remote theme is switched
-off so the build needs no network. In its place a stub `single` layout prints
-the page title and the navigation from `_data/navigation.yml`, the two values
-the theme's layout takes from this repository; the other checks are on page
-content, which the theme does not produce.
+built with the pinned gems (`site/Gemfile.lock`). The theme is switched off so
+the checks cover only this repository. In its place a stub `single` layout
+prints the page title and the navigation from `_data/navigation.yml`, the two
+values the theme's layout takes from this repository; the other checks are on
+page content, which the theme does not produce.
 
 The same build is also run on the demo document the pinned sslabdata emits,
 to check which of its links are shown.
@@ -128,11 +128,11 @@ def build(tmp, data):
         "_site", ".jekyll-cache", ".jekyll-metadata", ".bundle", "vendor",
         "lab.yml", "_config.generated.yml"))
     (source / "_data" / "lab.yml").write_text(data, encoding="utf-8")
-    # Drop the remote theme, which is fetched at build time; a later config
+    # Drop the theme, whose layouts these checks do not cover; a later config
     # file cannot unset it.
     config = source / "_config.yml"
     lines = config.read_text(encoding="utf-8").splitlines(keepends=True)
-    config.write_text("".join(l for l in lines if not l.startswith("remote_theme:")),
+    config.write_text("".join(l for l in lines if not l.startswith("theme:")),
                       encoding="utf-8")
     (source / "_layouts").mkdir()
     (source / "_layouts" / "single.html").write_text(STUB_LAYOUT, encoding="utf-8")
