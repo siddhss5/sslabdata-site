@@ -471,6 +471,8 @@ def test_demo_with_theme_loads_nothing_from_another_host(tmp_path):
     for p in pages:
         text = p.read_text(encoding="utf-8")
         assert "@latest" not in text, p
+        # The heading permalink icon Font Awesome drew is now CSS.
+        assert 'class="page__content' not in text or ".header-link .fa-link::before" in text, p
         parser = Loads()
         parser.feed(text)
         foreign = [u for u in parser.urls
