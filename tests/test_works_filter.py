@@ -173,7 +173,8 @@ def test_without_javascript_every_work_is_listed_and_shown(demo):
     assert "display: none" not in " ".join(e["attrs"].get("style") or "" for e in page.entries)
 
 
-def test_the_only_script_is_the_local_filter(demo):
+def test_page_content_adds_only_the_local_filter_script(demo):
+    # Under the stub layout, so the theme's own scripts are not on the page.
     page, _, _ = demo
     assert page.scripts == [{"src": "/assets/js/works-filter.js"}]
     source = SCRIPT.read_text(encoding="utf-8")
