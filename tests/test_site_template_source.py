@@ -100,3 +100,28 @@ def test_unescaped_output_check_sees_multiline_outputs():
 def test_allowlist_is_read_from_comments_only():
     source = "- `work.title`: not in a comment\n{{ work.title }}"
     assert allowlist(source) == {}
+
+
+# Every href and src starts with a quoted literal or is exactly a variable
+# captured from safe_url.html, so no scheme comes from the data file. Written
+# to be dumb: a template it cannot read gets rewritten the boring way.
+LINK_TARGET = re.compile(r'\b(?:href|src)="([^"]*)"|\]\(([^)]*)\)')
+SAFE_CAPTURE = re.compile(r"\{%-?\s*capture\s+(\w+)\s*-?%\}\{%\s*include\s+safe_url\.html\s")
+
+
+def unsafe_link_targets(source):
+    code = COMMENT.sub("", source)
+    safe = {f"{{{{ {name} }}}}" for name in SAFE_CAPTURE.findall(code)}
+    targets = (a or b for a, b in LINK_TARGET.findall(code))
+    return [t for t in targets if "{{" in t and not t.startswith("{{ '") and t not in safe]
+
+
+@pytest.mark.parametrize("path", TEMPLATES, ids=lambda p: p.name)
+def test_every_link_target_is_literal_or_from_safe_url(path):
+    assert unsafe_link_targets(path.read_text(encoding="utf-8")) == []
+
+
+def test_link_target_check_flags_data_urls():
+    source = ('<a href="{{ p.website | escape }}"> [x]({{ p.website }}) '
+              '{% capture url %}{% include safe_url.html url=p.website %}{% endcapture %}<a href="{{ url }}">')
+    assert unsafe_link_targets(source) == ["{{ p.website | escape }}", "{{ p.website }}"]

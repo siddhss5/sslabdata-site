@@ -1,0 +1,11 @@
+{%- comment -%}
+`include.url`, escaped, if its scheme is http, https or mailto; otherwise
+nothing, so other schemes (javascript:, data:, ...) and relative paths are
+never linked. Capture it and link only when it is not empty:
+
+  {% capture url %}{% include safe_url.html url=p.website %}{% endcapture %}
+  {% if url != "" %}<a href="{{ url }}">...</a>{% endif %}
+{%- endcomment -%}
+{%- assign safe_url_input = include.url | strip -%}
+{%- assign safe_url_scheme = safe_url_input | split: ":" | first | downcase -%}
+{%- if safe_url_input contains ":" -%}{%- case safe_url_scheme -%}{%- when "http", "https", "mailto" -%}{{ safe_url_input | escape }}{%- endcase -%}{%- endif -%}

@@ -11,6 +11,7 @@ Unescaped outputs. Every output not listed here is escaped.
 - `title_link`: HTML captured from work_link.html, which escapes the link's URL and text.
 - `web_link`: HTML captured from work_link.html, which escapes the link's URL and text.
 - `video_link`: HTML captured from work_link.html, which escapes the link's URL and text.
+- `url`: a URL captured from safe_url.html, which escapes it.
 - `'/projects/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
 {%- endcomment -%}
 
@@ -26,8 +27,8 @@ Unescaped outputs. Every output not listed here is escaped.
 
 <h2 style="display: inline; margin-right: 0.5em;">{{ project.title | escape }}</h2>
 {% if project.status == "active" %}
-  {% if project.website %}
-    <a href="{{ project.website | escape }}" target="_blank" class="btn btn--success btn--small">Active</a>
+  {% capture url %}{% include safe_url.html url=project.website %}{% endcapture %}{% if url != "" %}
+    <a href="{{ url }}" target="_blank" class="btn btn--success btn--small">Active</a>
   {% else %}
     <span class="btn btn--success btn--small">Active</span>
   {% endif %}

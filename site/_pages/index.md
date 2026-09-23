@@ -11,6 +11,9 @@ Unescaped outputs. Every output not listed here is escaped.
 - `current.size`: a count Liquid computes, not a string from the data file.
 - `alumni.size`: a count Liquid computes, not a string from the data file.
 - `projects.size`: a count Liquid computes, not a string from the data file.
+- `website_url`: a URL captured from safe_url.html, which escapes it.
+- `github_url`: a URL captured from safe_url.html, which escapes it.
+- `youtube_url`: a URL captured from safe_url.html, which escapes it.
 - `'/publications/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
 - `'/people/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
 - `'/projects/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
@@ -29,9 +32,9 @@ Unescaped outputs. Every output not listed here is escaped.
   <div style="color: #555; margin-bottom: 0.8em;">{{ info.department | escape }}, {{ info.university | escape }}</div>
   <p style="font-size: 1.05em;">{{ info.description | escape }}</p>
   <div>
-    {% if info.website %}<a href="{{ info.website | escape }}" class="btn btn--inverse btn--small" target="_blank">Website</a>{% endif %}
-    {% if info.github %}<a href="{{ info.github | escape }}" class="btn btn--inverse btn--small" target="_blank">GitHub</a>{% endif %}
-    {% if info.youtube %}<a href="{{ info.youtube | escape }}" class="btn btn--inverse btn--small" target="_blank">YouTube</a>{% endif %}
+    {% capture website_url %}{% include safe_url.html url=info.website %}{% endcapture %}{% if website_url != "" %}<a href="{{ website_url }}" class="btn btn--inverse btn--small" target="_blank">Website</a>{% endif %}
+    {% capture github_url %}{% include safe_url.html url=info.github %}{% endcapture %}{% if github_url != "" %}<a href="{{ github_url }}" class="btn btn--inverse btn--small" target="_blank">GitHub</a>{% endif %}
+    {% capture youtube_url %}{% include safe_url.html url=info.youtube %}{% endcapture %}{% if youtube_url != "" %}<a href="{{ youtube_url }}" class="btn btn--inverse btn--small" target="_blank">YouTube</a>{% endif %}
   </div>
 </div>
 <hr>
