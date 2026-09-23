@@ -9,15 +9,15 @@ Unescaped outputs. Every output not listed here is escaped.
 {%- endcomment -%}
 {% capture url %}{% include safe_url.html url=page.person.website %}{% endcapture %}{% if url != "" %}<p><a href="{{ url }}">Website</a></p>{% endif %}
 {% if page.projects.size > 0 %}
-<h3>Projects</h3>
+<h2>Projects</h2>
 <ul>{% for x in page.projects %}<li><a href="{{ '/projects/' | relative_url }}{{ x.id | escape }}/">{{ x.name | escape }}</a></li>{% endfor %}</ul>
 {% endif %}
 {% if page.coauthors.size > 0 %}
-<h3>Co-authors</h3>
+<h2>Co-authors</h2>
 <ul>{% for c in page.coauthors %}<li><a href="{{ '/coauthors/' | relative_url }}{{ c.key | escape }}/">{{ c.name | escape }}</a></li>{% endfor %}</ul>
 {% endif %}
 {% if page.works.size > 0 %}
-<h3>Works</h3>
+<h2>Works</h2>
 <p><a href="{{ '/people/' | relative_url }}{{ page.person.id | escape }}.bib" download>BibTeX of these works (.bib)</a></p>
 {% for pub in page.works %}{% include publication.html pub=pub %}{% endfor %}
 {% endif %}

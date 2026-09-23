@@ -1,5 +1,4 @@
 ---
-title: ""
 permalink: /
 layout: single
 classes: wide
@@ -28,7 +27,7 @@ Unescaped outputs. Every output not listed here is escaped.
 
 {% if info %}
 <div style="margin-bottom: 1.5em;">
-  <h2 style="margin-bottom: 0.3em;">{{ info.name | escape }}</h2>
+  <h1 style="margin-bottom: 0.3em;">{{ info.name | escape }}</h1>
   <div style="color: #555; margin-bottom: 0.8em;">{{ info.department | escape }}, {{ info.university | escape }}</div>
   <p style="font-size: 1.05em;">{{ info.description | escape }}</p>
   <div>
