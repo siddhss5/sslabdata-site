@@ -21,6 +21,13 @@ lab:
 site:
   url: "https://siddhss5.github.io"
   baseurl: "/sslabdata-site"
+  # People page groups, in order. Optional: a role not named here still
+  # gets a group of its own, titled from the role's name.
+  people_groups:
+    - {title: "Principal Investigator", roles: [professor]}
+    - {title: "Postdocs", roles: [postdoc]}
+    - {title: "PhD Students", roles: [phd_student]}
+    - {title: "MS Students", roles: [ms_student]}
 
 bib_dir: "demo/bib"
 bib_files:

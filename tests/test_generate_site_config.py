@@ -58,3 +58,10 @@ class TestGenerateSiteConfig:
         }))
         config = self._run(lab_yaml, tmp_path)
         assert config == {"title": "Root Lab", "baseurl": ""}
+
+    def test_people_groups(self, tmp_path):
+        groups = [{"title": "Faculty", "roles": ["professor"]},
+                  {"title": "Research Staff", "roles": ["research_scientist", "engineer"]}]
+        lab_yaml = tmp_path / "lab.yaml"
+        lab_yaml.write_text(yaml.safe_dump({"site": {"people_groups": groups}}))
+        assert self._run(lab_yaml, tmp_path)["people_groups"] == groups
