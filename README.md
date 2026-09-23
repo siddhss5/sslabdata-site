@@ -20,11 +20,11 @@ is not the owner's real lab site.
 
 | Path | What it is |
 |------|------------|
-| [`site/`](site/) | The Jekyll site: `_config.yml`, `_pages/`, `_includes/`, `_data/navigation.yml`, and the `Gemfile` / `Gemfile.lock` that pin Jekyll; `_includes/head.html` is a copy of the theme's without its Font Awesome CDN load; re-check it when upgrading the theme |
+| [`site/`](site/) | The Jekyll site: `_config.yml`, `_pages/`, `_includes/`, `_data/navigation.yml`, `assets/js/works-filter.js`, and the `Gemfile` / `Gemfile.lock` that pin Jekyll; `_includes/head.html` is a copy of the theme's without its Font Awesome CDN load; re-check it when upgrading the theme |
 | [`demo/`](demo/) | Example Lab's `lab.yaml`, `people.yaml`, `projects.yaml`, `collaborators.yaml` and `bib/` |
 | [`scripts/generate_site_config.py`](scripts/generate_site_config.py) | Writes the Jekyll settings that come from `lab.yaml` to `site/_config.generated.yml` |
 | [`scripts/generate_pages.py`](scripts/generate_pages.py) | Writes a page for every work, person, project and co-author in the data file to `site/_entities/`, each linking to the others it names, and the co-author graph page |
-| [`tests/`](tests/) | Tests for `generate_site_config.py`, source-level checks on the templates, and checks on the HTML Jekyll builds from a fixture data file |
+| [`tests/`](tests/) | Tests for `generate_site_config.py`, source-level checks on the templates, checks on the HTML Jekyll builds from a fixture data file, and the works filter script run under node on the built demo |
 | [`.github/workflows/`](.github/workflows/) | `build.yml` (the build), `pages.yml` (build on PRs, deploy from `main`), `release-gate.yml` (build against a candidate sslabdata) |
 
 `scripts/generate_site_config.py` reads the optional `site:` section of
@@ -62,6 +62,12 @@ section.
   labelled "(unchecked)", whatever its status. See
   [`site/_includes/work_link.html`](site/_includes/work_link.html), which
   names the identifier kinds in an explicit list.
+- **The works list is complete without JavaScript.** `/publications/` lists
+  every work in its HTML. [`works-filter.js`](site/assets/js/works-filter.js),
+  a plain script with no library, reveals a form that filters the list by
+  year, type (the work's `category`), project (`project_ids`), person (an
+  author's `person_id`) and text, and keeps the filters in the URL
+  (`?year=2021&person=hhughes`), so a filtered view can be shared.
 - **The co-author graph is a picture of its table.** `/coauthor-graph/` draws
   a line between each lab member and each co-author who share a work, as SVG
   with no script, and lists the same pairs, with the number of works they

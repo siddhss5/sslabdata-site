@@ -5,13 +5,26 @@ layout: single
 classes: wide
 ---
 
-<div style="margin-bottom: 1.5em;">
-  <input type="text" id="pub-search" placeholder="Filter by title, author, venue, or keyword..." style="width: 100%; padding: 0.6em; font-size: 1em; border: 1px solid #ccc; border-radius: 4px;">
-  <div id="pub-search-count" style="margin-top: 0.3em; font-size: 0.85em; color: #666;"></div>
-</div>
+{%- comment -%}
+The full list is in the page, so it is complete without JavaScript.
+works-filter.js reveals the hidden form and shows only the works matching the
+URL's parameters, named as the form's fields.
 
+Unescaped outputs. Every output not listed here is escaped.
+- `'/assets/js/works-filter.js' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
+{%- endcomment -%}
 {% assign pubs = site.data.lab.works %}
 {% assign years = pubs | map: "year" | uniq | sort | reverse %}
+{% assign types = pubs | map: "category" | uniq | sort %}
+
+<form id="works-filter" hidden style="margin-bottom: 1.5em;">
+<select name="year" aria-label="Year"><option value="">All years</option>{% for year in years %}<option value="{{ year | escape }}">{{ year | escape }}</option>{% endfor %}</select>
+<select name="type" aria-label="Type"><option value="">All types</option>{% for type in types %}<option value="{{ type | escape }}">{{ type | escape }}</option>{% endfor %}</select>
+<select name="project" aria-label="Project"><option value="">All projects</option>{% for project in site.data.lab.projects %}<option value="{{ project.id | escape }}">{{ project.title | escape }}</option>{% endfor %}</select>
+<select name="person" aria-label="Person"><option value="">All people</option>{% for person in site.data.lab.people %}{% if person.work_ids.size > 0 %}<option value="{{ person.id | escape }}">{{ person.name | escape }}</option>{% endif %}{% endfor %}</select>
+<input type="search" name="q" placeholder="Title, author, venue or key" aria-label="Search">
+<div id="works-filter-count" style="margin-top: 0.3em; font-size: 0.85em; color: #666;"></div>
+</form>
 
 {% for year in years %}
 <div class="pub-year-section" data-year="{{ year | escape }}">
@@ -34,43 +47,4 @@ classes: wide
 </div>
 {% endfor %}
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  var searchInput = document.getElementById('pub-search');
-  var countDisplay = document.getElementById('pub-search-count');
-  var entries = document.querySelectorAll('.pub-entry');
-  var yearSections = document.querySelectorAll('.pub-year-section');
-  var catSections = document.querySelectorAll('.pub-category-section');
-  var total = entries.length;
-
-  searchInput.addEventListener('input', function() {
-    var query = this.value.toLowerCase().trim();
-    var shown = 0;
-
-    entries.forEach(function(entry) {
-      var text = entry.getAttribute('data-searchable') || '';
-      var match = !query || text.indexOf(query) !== -1;
-      entry.style.display = match ? '' : 'none';
-      if (match) shown++;
-    });
-
-    // Hide empty category and year sections
-    catSections.forEach(function(sec) {
-      var visible = sec.querySelectorAll('.pub-entry[style=""], .pub-entry:not([style])');
-      var hasVisible = Array.from(sec.querySelectorAll('.pub-entry')).some(function(e) {
-        return e.style.display !== 'none';
-      });
-      sec.style.display = hasVisible ? '' : 'none';
-    });
-
-    yearSections.forEach(function(sec) {
-      var hasVisible = Array.from(sec.querySelectorAll('.pub-entry')).some(function(e) {
-        return e.style.display !== 'none';
-      });
-      sec.style.display = hasVisible ? '' : 'none';
-    });
-
-    countDisplay.textContent = query ? ('Showing ' + shown + ' of ' + total + ' works') : '';
-  });
-});
-</script>
+<script src="{{ '/assets/js/works-filter.js' | relative_url }}"></script>
