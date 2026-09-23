@@ -3,7 +3,8 @@
 Write the Jekyll settings that come from lab.yaml to a separate config file.
 
 The site title and description come from `lab.name` and `lab.description`;
-`url` and `baseurl` come from the optional `site` section. Build with both
+`url`, `baseurl` and `people_groups` (which titles and orders the groups on
+the People page) come from the optional `site` section. Build with both
 files so these values override site/_config.yml:
 
     python scripts/generate_site_config.py lab.yaml site/_config.generated.yml
@@ -28,6 +29,8 @@ def site_config(lab_config: dict) -> dict:
     if site.get('url'):
         config['url'] = site['url']
     config['baseurl'] = site.get('baseurl', '')
+    if site.get('people_groups'):
+        config['people_groups'] = site['people_groups']
     return config
 
 
