@@ -11,6 +11,7 @@ Unescaped outputs. Every output not listed here is escaped.
 - `title_link`: HTML captured from work_link.html, which escapes the link's URL and text.
 - `web_link`: HTML captured from work_link.html, which escapes the link's URL and text.
 - `video_link`: HTML captured from work_link.html, which escapes the link's URL and text.
+- `'/publications/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
 - `url`: a URL captured from safe_url.html, which escapes it.
 - `'/projects/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
 {%- endcomment -%}
@@ -35,7 +36,7 @@ Unescaped outputs. Every output not listed here is escaped.
 {% else %}
   <span class="btn btn--secondary btn--small">{{ project.status | capitalize | escape }}</span>
 {% endif %}
-<a href="{{ '/projects/' | relative_url }}#{{ project.id | escape }}" class="btn btn--info btn--small">{{ project.id | escape }}</a>
+<a href="{{ '/projects/' | relative_url }}{{ project.id | escape }}/" class="btn btn--info btn--small">{{ project.id | escape }}</a>
 
 {% if project.description %}
 <p style="margin-top: 0.8em;">{{ project.description | escape }}</p>
@@ -60,22 +61,17 @@ Unescaped outputs. Every output not listed here is escaped.
     {% endif %}
   </div>
   <div style="font-size: 0.9em; color: #494e52;">
-    {% for author in pub.authors %}{{ author.name | escape }}{% if author.equal_contribution %}<sup>*</sup>{% endif %}{% unless forloop.last %}, {% endunless %}{% endfor %}
+    {% include author_list.html authors=pub.authors %}
   </div>
-  {% assign equal_authors = pub.authors | where: "equal_contribution", true %}
-  {% if equal_authors.size > 0 %}
-  <div style="font-size: 0.85em; color: #494e52;"><sup>*</sup> equal contribution</div>
-  {% endif %}
   <div style="font-size: 0.9em; color: #494e52;">
     {% include venue.html work=pub %}
   </div>
-  {% if pub.note or web_link != "" or video_link != "" %}
   <div style="font-size: 0.9em; margin-top: 0.2em;">
+    <a href="{{ '/publications/' | relative_url }}{{ pub.bib_id | escape }}/" style="margin-right: 0.6em;">Details</a>
     {{ web_link }}
     {{ video_link }}
     {% if pub.note %}<strong>{{ pub.note | escape }}</strong>{% endif %}
   </div>
-  {% endif %}
 </div>
   {% endif %}
 {% endfor %}

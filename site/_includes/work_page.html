@@ -1,0 +1,9 @@
+{%- comment -%}
+A work's page, written by scripts/generate_pages.py. publication.html links
+the authors to their person or co-author pages and the projects to theirs.
+{%- endcomment -%}
+{% include publication.html pub=page.work %}
+{% if page.work.abstract %}
+<h2>Abstract</h2>
+<p>{{ page.work.abstract | escape }}</p>
+{% endif %}

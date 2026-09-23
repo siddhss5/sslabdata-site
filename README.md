@@ -23,6 +23,7 @@ is not the owner's real lab site.
 | [`site/`](site/) | The Jekyll site: `_config.yml`, `_pages/`, `_includes/`, `_data/navigation.yml`, and the `Gemfile` / `Gemfile.lock` that pin Jekyll |
 | [`demo/`](demo/) | Example Lab's `lab.yaml`, `people.yaml`, `projects.yaml`, `collaborators.yaml` and `bib/` |
 | [`scripts/generate_site_config.py`](scripts/generate_site_config.py) | Writes the Jekyll settings that come from `lab.yaml` to `site/_config.generated.yml` |
+| [`scripts/generate_pages.py`](scripts/generate_pages.py) | Writes a page for every work, person, project and co-author in the data file to `site/_entities/`, each linking to the others it names |
 | [`tests/`](tests/) | Tests for `generate_site_config.py`, source-level checks on the templates, and checks on the HTML Jekyll builds from a fixture data file |
 | [`.github/workflows/`](.github/workflows/) | `build.yml` (the build), `pages.yml` (build on PRs, deploy from `main`), `release-gate.yml` (build against a candidate sslabdata) |
 
@@ -80,6 +81,7 @@ uv run --frozen pytest
 uv run --frozen sslabdata --config demo/lab.yaml --validate
 uv run --frozen sslabdata --config demo/lab.yaml --output site/_data/lab.yml
 uv run --frozen python scripts/generate_site_config.py demo/lab.yaml site/_config.generated.yml
+uv run --frozen python scripts/generate_pages.py site/_data/lab.yml site/_entities
 cd site
 bundle install
 bundle exec jekyll serve --config _config.yml,_config.generated.yml

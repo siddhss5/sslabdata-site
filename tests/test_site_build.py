@@ -9,8 +9,10 @@ prints the page title and the navigation from `_data/navigation.yml`, the two
 values the theme's layout takes from this repository; the other checks are on
 page content, which the theme does not produce.
 
-The same build is also run on the demo document the pinned sslabdata emits,
-to check which of its links are shown.
+Before each build, scripts/generate_pages.py writes the entity pages from the
+data file. The same build is also run on the demo document the pinned
+sslabdata emits, to check which of its links are shown and that its entity
+pages link each relationship both ways.
 
 Skipped when Bundler or the pinned Jekyll is not installed.
 """
@@ -108,7 +110,8 @@ FIXTURE = {
          "description": "Project _description_ <script>x</script>",
          "status": "active", "website": BAD_URLS[4], "work_ids": ["script2024", "plain2024", "missing2024"]},
     ],
-    "collaborators": [{"name": "<b>Collab</b> *Orator*"}],
+    # Optional fields are left out or null: no work_ids or people_ids.
+    "collaborators": [{"key": "collab", "name": "<b>Collab</b> *Orator*", "work_ids": None}],
 }
 
 
@@ -136,8 +139,10 @@ def build(tmp, data):
     source = tmp / "site"
     shutil.copytree(SITE, source, ignore=shutil.ignore_patterns(
         "_site", ".jekyll-cache", ".jekyll-metadata", ".bundle", "vendor",
-        "lab.yml", "_config.generated.yml"))
+        "lab.yml", "_config.generated.yml", "_entities"))
     (source / "_data" / "lab.yml").write_text(data, encoding="utf-8")
+    subprocess.run([sys.executable, "scripts/generate_pages.py", source / "_data" / "lab.yml",
+                    source / "_entities"], check=True, cwd=REPO_ROOT)
     # Drop the theme, whose layouts these checks do not cover; a later config
     # file cannot unset it.
     config = source / "_config.yml"
@@ -316,3 +321,47 @@ def test_demo_shows_identifier_links_and_hides_guessed_pdfs(demo):
             assert anchor + " <small" not in html, l["url"]
     for l in by_kind["pdf"]:
         assert l["url"] not in html, l["url"]
+
+
+def test_demo_entity_pages_link_both_ways(demo):
+    """Every work, person, project and co-author has a page; each relationship
+    in the data file is linked from both ends; every internal link resolves."""
+    built, document = demo
+    url = {"work": "/publications/{}/", "person": "/people/{}/",
+           "project": "/projects/{}/", "coauthor": "/coauthors/{}/"}
+    works = {w["bib_id"]: w for w in document["works"]}
+    pages = [url["work"].format(i) for i in works]
+    edges = set()
+    for w in works.values():
+        work = url["work"].format(w["bib_id"])
+        for a in w["authors"]:
+            edges.add((work, url["person"].format(a["person_id"]) if a["person_id"]
+                       else url["coauthor"].format(a["collaborator_key"])))
+        edges |= {(work, url["project"].format(i)) for i in w["project_ids"]}
+    for kind, key, entities in [("person", "id", document["people"]),
+                                ("project", "id", document["projects"]),
+                                ("coauthor", "key", document["collaborators"])]:
+        for e in entities:
+            here = url[kind].format(e[key])
+            pages.append(here)
+            for wid in e["work_ids"]:
+                edges.add((here, url["work"].format(wid)))
+                for a in works[wid]["authors"]:
+                    if kind == "person" and a["collaborator_key"]:
+                        edges.add((here, url["coauthor"].format(a["collaborator_key"])))
+                    if kind == "coauthor" and a["person_id"]:
+                        edges.add((here, url["person"].format(a["person_id"])))
+            edges |= {(here, url["person"].format(i)) for i in e.get("people_ids", [])}
+    for p in pages:
+        assert (built / p.strip("/") / "index.html").is_file(), p
+
+    def links(path):
+        return set(re.findall(r'href="(/[^"#]*)', (built / path.strip("/") / "index.html").read_text(encoding="utf-8")))
+
+    for a, b in edges:
+        assert b in links(a), (a, b)
+        assert a in links(b), (b, a)
+    for f in built.rglob("*.html"):
+        for target in re.findall(r'href="(/[^"#]*)', f.read_text(encoding="utf-8")):
+            assert (built / target.lstrip("/") / "index.html").is_file() or \
+                (built / target.lstrip("/")).is_file(), (f, target)

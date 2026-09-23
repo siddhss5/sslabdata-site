@@ -1,0 +1,22 @@
+{%- comment -%}
+A person's page, written by scripts/generate_pages.py.
+
+Unescaped outputs. Every output not listed here is escaped.
+- `url`: a URL captured from safe_url.html, which escapes it.
+- `'/projects/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
+- `'/coauthors/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
+{%- endcomment -%}
+<h2>{{ page.person.name | escape }}</h2>
+{% capture url %}{% include safe_url.html url=page.person.website %}{% endcapture %}{% if url != "" %}<p><a href="{{ url }}">Website</a></p>{% endif %}
+{% if page.projects.size > 0 %}
+<h3>Projects</h3>
+<ul>{% for x in page.projects %}<li><a href="{{ '/projects/' | relative_url }}{{ x.id | escape }}/">{{ x.name | escape }}</a></li>{% endfor %}</ul>
+{% endif %}
+{% if page.coauthors.size > 0 %}
+<h3>Co-authors</h3>
+<ul>{% for c in page.coauthors %}<li><a href="{{ '/coauthors/' | relative_url }}{{ c.key | escape }}/">{{ c.name | escape }}</a></li>{% endfor %}</ul>
+{% endif %}
+{% if page.works.size > 0 %}
+<h3>Works</h3>
+{% for pub in page.works %}{% include publication.html pub=pub %}{% endfor %}
+{% endif %}

@@ -4,6 +4,7 @@ it is printed; `note` is plain text too, not Markdown.
 
 Unescaped outputs. Every output not listed here is escaped.
 - `title_link`: HTML captured from work_link.html, which escapes the link's URL and text.
+- `'/publications/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
 - `'/projects/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
 {%- endcomment -%}
 {% capture title_link %}{% include work_link.html work=include.pub kind="pdf" text=include.pub.title %}{% endcapture %}
@@ -23,6 +24,7 @@ Unescaped outputs. Every output not listed here is escaped.
     {% if include.pub.note %}<br><strong>{{ include.pub.note | escape }}</strong>{% endif %}
   </div>
   <div>
+    <a href="{{ '/publications/' | relative_url }}{{ include.pub.bib_id | escape }}/" class="btn btn--inverse btn--small">Details</a>
     {% include work_link.html work=include.pub kind="doi" text="DOI" class="btn btn--inverse btn--small" blank=true %}
     {% include work_link.html work=include.pub kind="arxiv" text="arXiv" class="btn btn--inverse btn--small" blank=true %}
     {% if include.pub.abstract %}
@@ -34,7 +36,7 @@ Unescaped outputs. Every output not listed here is escaped.
     {% include work_link.html work=include.pub kind="video" text="Video" class="btn btn--inverse btn--small" blank=true %}
     {% if include.pub.project_ids.size > 0 %}
       {% for pid in include.pub.project_ids %}
-        <a href="{{ '/projects/' | relative_url }}#{{ pid | escape }}" class="btn btn--info btn--small" style="margin: 0.1em;">{{ pid | escape }}</a>
+        <a href="{{ '/projects/' | relative_url }}{{ pid | escape }}/" class="btn btn--info btn--small" style="margin: 0.1em;">{{ pid | escape }}</a>
       {% endfor %}
     {% endif %}
   </div>
