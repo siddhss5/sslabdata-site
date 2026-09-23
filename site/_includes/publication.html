@@ -8,7 +8,7 @@ Unescaped outputs. Every output not listed here is escaped.
 - `'/projects/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
 {%- endcomment -%}
 {% capture title_link %}{% include work_link.html work=include.pub kind="pdf" text=include.pub.title %}{% endcapture %}
-<div class="pub-entry" style="margin-bottom: 1.5em;" data-searchable="{{ include.pub.title | downcase | escape }} {{ include.pub.authors | map: 'name' | join: ' ' | downcase | escape }} {{ include.pub.venue.name | downcase | escape }} {{ include.pub.bib_id | downcase | escape }}">
+<div class="pub-entry" style="margin-bottom: 1.5em;" data-year="{{ include.pub.year | escape }}" data-type="{{ include.pub.category | escape }}" data-projects="{{ include.pub.project_ids | join: ' ' | escape }}" data-people="{{ include.pub.authors | map: 'person_id' | compact | join: ' ' | escape }}" data-searchable="{{ include.pub.title | downcase | escape }} {{ include.pub.authors | map: 'name' | join: ' ' | downcase | escape }} {{ include.pub.venue.name | downcase | escape }} {{ include.pub.bib_id | downcase | escape }}">
   <div style="margin-bottom: 0.3em;">
     {% if title_link != "" %}
       <strong>{{ title_link }}</strong>
