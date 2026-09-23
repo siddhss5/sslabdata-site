@@ -23,7 +23,7 @@ is not the owner's real lab site.
 | [`site/`](site/) | The Jekyll site: `_config.yml`, `_pages/`, `_includes/`, `_data/navigation.yml`, and the `Gemfile` / `Gemfile.lock` that pin Jekyll |
 | [`demo/`](demo/) | Example Lab's `lab.yaml`, `people.yaml`, `projects.yaml`, `collaborators.yaml` and `bib/` |
 | [`scripts/generate_site_config.py`](scripts/generate_site_config.py) | Writes the Jekyll settings that come from `lab.yaml` to `site/_config.generated.yml` |
-| [`scripts/generate_pages.py`](scripts/generate_pages.py) | Writes a page for every work, person, project and co-author in the data file to `site/_entities/`, each linking to the others it names |
+| [`scripts/generate_pages.py`](scripts/generate_pages.py) | Writes a page for every work, person, project and co-author in the data file to `site/_entities/`, each linking to the others it names, and the co-author graph page |
 | [`tests/`](tests/) | Tests for `generate_site_config.py`, source-level checks on the templates, and checks on the HTML Jekyll builds from a fixture data file |
 | [`.github/workflows/`](.github/workflows/) | `build.yml` (the build), `pages.yml` (build on PRs, deploy from `main`), `release-gate.yml` (build against a candidate sslabdata) |
 
@@ -62,6 +62,11 @@ section.
   labelled "(unchecked)", whatever its status. See
   [`site/_includes/work_link.html`](site/_includes/work_link.html), which
   names the identifier kinds in an explicit list.
+- **The co-author graph is a picture of its table.** `/coauthor-graph/` draws
+  a line between each lab member and each co-author who share a work, as SVG
+  with no script, and lists the same pairs, with the number of works they
+  share, in a table. Nodes sit on a circle in a fixed order (lab members by
+  id, co-authors by key), so every build draws the same picture.
 
 ## The sslabdata pin
 
