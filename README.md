@@ -28,12 +28,18 @@ is not the owner's real lab site.
 | [`.github/workflows/`](.github/workflows/) | `build.yml` (the build), `pages.yml` (build on PRs, deploy from `main`), `release-gate.yml` (build against a candidate sslabdata) |
 
 `scripts/generate_site_config.py` reads the optional `site:` section of
-`lab.yaml` (`url` and `baseurl`) and writes it, with the lab name and
+`lab.yaml` (`url`, `baseurl` and `people_groups`) and writes it, with the lab name and
 description, into `site/_config.generated.yml`. sslabdata itself ignores that
 section.
 
 ## Rendering rules
 
+- **Nobody is left off the People page.** Its groups come from the roles in
+  the data file, current members first, then alumni. `site.people_groups` in
+  `lab.yaml` optionally titles and orders them, e.g.
+  `- {title: "Faculty", roles: [professor]}`; a role it does not name gets a
+  group of its own, titled from the role (`visiting_scholar` becomes
+  "Visiting Scholar").
 - **Every string is text.** Every string taken from the data file is escaped
   where it is printed, `note` included; none is read as HTML or Markdown.
   A template that prints anything unescaped names it, with the reason, in an

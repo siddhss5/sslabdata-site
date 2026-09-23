@@ -105,6 +105,11 @@ FIXTURE = {
          "website": BAD_URLS[2]},
         {"id": "pi", "name": "<b>The</b> *PI*", "role": "professor",
          "status": "current", "website": GOOD_URLS[2]},
+        # Roles and statuses a fixed list of groups would drop.
+        {"id": "visitor", "name": "Vera Visitor", "role": "visiting_scholar", "status": "current"},
+        {"id": "postdoc", "name": "Paul Postdoc", "role": "postdoc", "status": "current"},
+        {"id": "emeritus", "name": "Emma Emeritus", "role": "professor", "status": "alumni"},
+        {"id": "engineer", "name": "Eli Engineer", "role": "engineer", "status": "current"},
     ],
     "projects": [
         {"id": "demo", "title": "*Project* <b>One</b>",
@@ -114,6 +119,13 @@ FIXTURE = {
     # Optional fields are left out or null: no work_ids or people_ids.
     "collaborators": [{"key": "collab", "name": "<b>Collab</b> *Orator*", "work_ids": None}],
 }
+
+
+# People groups for the fixture build. `professor` and `engineer` are each
+# named twice; `visiting_scholar` and the other roles are not named.
+PEOPLE_GROUPS = [{"title": "Faculty", "roles": ["professor"]},
+                 {"title": "Research Staff", "roles": ["engineer", "professor"]},
+                 {"title": "Engineers", "roles": ["engineer"]}]
 
 
 # The title is filtered as the theme's seo.html and single.html filter it.
@@ -134,7 +146,7 @@ def _jekyll_available():
     return result.returncode == 0
 
 
-def build(tmp, data):
+def build(tmp, data, people_groups=None):
     """Build a copy of site/ with `data` as _data/lab.yml; return the output."""
     if not _jekyll_available():
         pytest.skip("bundle exec jekyll is not available")
@@ -155,7 +167,9 @@ def build(tmp, data):
     (source / "_layouts" / "single.html").write_text(STUB_LAYOUT, encoding="utf-8")
     (source / "_config.test.yml").write_text(
         "title: Fixture\nurl: https://fixture.invalid\nbaseurl: ''\n"
-        "repository: fixture/fixture\n", encoding="utf-8")
+        "repository: fixture/fixture\n" +
+        (yaml.safe_dump({"people_groups": people_groups}) if people_groups else ""),
+        encoding="utf-8")
     dest = tmp / "_site"
     env = dict(os.environ, BUNDLE_GEMFILE=str(GEMFILE), BUNDLE_FROZEN="true",
                JEKYLL_ENV="production")
@@ -171,6 +185,13 @@ def build(tmp, data):
 @pytest.fixture(scope="module")
 def built(tmp_path_factory):
     return build(tmp_path_factory.mktemp("site"),
+                 yaml.safe_dump(FIXTURE, allow_unicode=True), PEOPLE_GROUPS)
+
+
+@pytest.fixture(scope="module")
+def unconfigured(tmp_path_factory):
+    """The fixture built with no people_groups at all."""
+    return build(tmp_path_factory.mktemp("unconfigured"),
                  yaml.safe_dump(FIXTURE, allow_unicode=True))
 
 
@@ -184,7 +205,11 @@ def demo(tmp_path_factory):
          "--output", str(data)], capture_output=True, text=True, cwd=REPO_ROOT)
     assert result.returncode == 0, result.stdout + result.stderr
     document = yaml.safe_load(data.read_text(encoding="utf-8"))
-    return build(tmp, data.read_text(encoding="utf-8")), document
+    config = tmp / "_config.generated.yml"
+    subprocess.run([sys.executable, "scripts/generate_site_config.py", "demo/lab.yaml", config],
+                   check=True, cwd=REPO_ROOT)
+    people_groups = yaml.safe_load(config.read_text(encoding="utf-8"))["people_groups"]
+    return build(tmp, data.read_text(encoding="utf-8"), people_groups), document
 
 
 def page(built, path):
@@ -414,3 +439,57 @@ def test_demo_coauthor_index_links_every_coauthor(demo):
     assert "not a verified person" in text
     for c in document["collaborators"]:
         assert f'<a href="/coauthors/{c["key"]}/">{html.escape(c["name"])}</a>' in text, c["name"]
+
+
+def people_sections(built):
+    """The People page's headings, in order, each with the ids of the people under it."""
+    text = page(built, "people").split("Collaborators")[0]
+    sections = []
+    for m in re.finditer(r'<h[23][^>]*>(.*?)</h[23]>|<span id="([^"]+)"><a href="/people/', text):
+        if m[1] is not None:
+            sections.append((html.unescape(m[1]), []))
+        else:
+            sections[-1][1].append(m[2])
+    return sections
+
+
+@pytest.mark.parametrize("site", ["built", "unconfigured", "demo"])
+def test_every_person_appears_exactly_once_on_the_people_page(site, request):
+    built = request.getfixturevalue(site)
+    people = built[1]["people"] if site == "demo" else FIXTURE["people"]
+    built = built[0] if site == "demo" else built
+    shown = [i for _, ids in people_sections(built) for i in ids]
+    assert sorted(shown) == sorted(p["id"] for p in people)
+
+
+def test_people_groups_title_and_order_and_show_each_role_once(built):
+    assert people_sections(built) == [
+        ("Faculty", ["pi"]), ("Research Staff", ["engineer"]),
+        ("Phd Student", ["ada"]), ("Visiting Scholar", ["visitor"]), ("Postdoc", ["postdoc"]),
+        ("Alumni", []), ("Faculty", ["emeritus"]),
+    ]
+
+
+def test_without_people_groups_each_role_is_titled_from_its_name(unconfigured):
+    assert people_sections(unconfigured) == [
+        ("Phd Student", ["ada"]), ("Professor", ["pi"]), ("Visiting Scholar", ["visitor"]),
+        ("Postdoc", ["postdoc"]), ("Engineer", ["engineer"]),
+        ("Alumni", []), ("Professor", ["emeritus"]),
+    ]
+
+
+def test_demo_people_page_groups(demo):
+    built, document = demo
+
+    def ids(status, role):
+        return [p["id"] for p in document["people"] if p["status"] == status and p["role"] == role]
+
+    assert people_sections(built) == [
+        ("Principal Investigator", ids("current", "professor")),
+        ("PhD Students", ids("current", "phd_student")),
+        ("MS Students", ids("current", "ms_student")),
+        ("Alumni", []),
+        ("Postdocs", ids("alumni", "postdoc")),
+        ("PhD Students", ids("alumni", "phd_student")),
+        ("MS Students", ids("alumni", "ms_student")),
+    ]
