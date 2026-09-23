@@ -1,0 +1,21 @@
+{%- comment -%}
+The co-author graph page, written by scripts/generate_pages.py, which places
+the nodes on a circle. The table below the graph carries the same edges.
+
+Unescaped outputs. Every output not listed here is escaped.
+- `'/people/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
+- `'/coauthors/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
+{%- endcomment -%}
+<p>A line joins a lab member and a co-author who share at least one work; the table below lists the same pairs with the number of works they share.</p>
+<p>Legend: ● filled circle, a lab member; □ open square, a co-author. A co-author groups author names by their spelling (names that normalise to the same string). It is not a verified person: two different people who write their name the same way share one node.</p>
+<svg viewBox="-330 -220 660 440" width="100%" role="group" aria-labelledby="coauthor-graph-title" aria-describedby="coauthor-graph-desc" style="max-width: 660px; font-size: 12px;">
+<title id="coauthor-graph-title">Co-author graph</title>
+<desc id="coauthor-graph-desc">Lab members, drawn as filled circles, and co-authors, drawn as open squares, placed on a circle; a line joins each lab member and co-author who share a work. The table below lists the same pairs.</desc>
+<g stroke="#999">{% for e in page.edges %}<line x1="{{ e.x1 | escape }}" y1="{{ e.y1 | escape }}" x2="{{ e.x2 | escape }}" y2="{{ e.y2 | escape }}" stroke-width="{{ e.works | escape }}"/>{% endfor %}</g>
+{% for n in page.nodes %}{% if n.kind == "person" %}<a href="{{ '/people/' | relative_url }}{{ n.id | escape }}/"><circle cx="{{ n.x | escape }}" cy="{{ n.y | escape }}" r="6" fill="#333"/>{% else %}<a href="{{ '/coauthors/' | relative_url }}{{ n.id | escape }}/"><rect x="{{ n.x | minus: 6 | escape }}" y="{{ n.y | minus: 6 | escape }}" width="12" height="12" fill="#fff" stroke="#333" stroke-width="2"/>{% endif %}<text x="{{ n.x | escape }}" y="{{ n.y | escape }}" dx="{% if n.anchor == "start" %}10{% else %}-10{% endif %}" dy="4" text-anchor="{{ n.anchor | escape }}">{{ n.name | escape }}</text></a>
+{% endfor %}</svg>
+<table id="coauthor-table">
+<caption>Lab members and the co-authors they share works with</caption>
+<thead><tr><th scope="col">Lab member</th><th scope="col">Co-author</th><th scope="col">Shared works</th></tr></thead>
+<tbody>{% for e in page.edges %}<tr><td><a href="{{ '/people/' | relative_url }}{{ e.person | escape }}/">{{ e.person_name | escape }}</a></td><td><a href="{{ '/coauthors/' | relative_url }}{{ e.coauthor | escape }}/">{{ e.coauthor_name | escape }}</a></td><td>{{ e.works | escape }}</td></tr>{% endfor %}</tbody>
+</table>
