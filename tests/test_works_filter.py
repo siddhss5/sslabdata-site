@@ -245,3 +245,20 @@ def test_changing_the_form_writes_the_state_to_the_url(demo):
     # The written URL, loaded afresh, shows the same works.
     [reloaded] = run_filter(page, after["url"].split("?", 1)[1])
     assert reloaded["works"] == after["works"]
+
+
+def test_undated_works_come_last_and_only_without_a_year_filter(tmp_path):
+    document = yaml.safe_load(demo_data(tmp_path)[0])
+    document["works"][0]["year"] = None
+    built = build(tmp_path, yaml.safe_dump(document, allow_unicode=True))
+    text = (built / "publications" / "index.html").read_text(encoding="utf-8")
+    page = WorksPage()
+    page.feed(text)
+    assert re.findall(r"<h2>(.*?)</h2>", text)[-1] == "Undated"
+    assert page.bib_id(len(page.entries) - 1) == document["works"][0]["bib_id"]
+    years = re.search(r'<select name="year".*?</select>', text)[0]
+    assert all(re.fullmatch(r"\d*", v) for v in re.findall(r'value="([^"]*)"', years))
+    [state] = run_filter(page, "")
+    assert state["works"] == matching(document)
+    [state] = run_filter(page, "year=2025")
+    assert state["works"] == matching(document, year="2025")

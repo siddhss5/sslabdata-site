@@ -14,7 +14,7 @@ from pathlib import Path
 
 import yaml
 
-from test_site_build import FIXTURE, REPO_ROOT, build, demo, page  # noqa: F401
+from test_site_build import COLLAB, FIXTURE, REPO_ROOT, build, demo, page  # noqa: F401
 
 
 def expected_edges(document):
@@ -78,13 +78,13 @@ def test_demo_graph_needs_no_script_and_has_a_text_alternative(demo):
 def test_graph_and_table_show_names_as_text(tmp_path):
     fixture = copy.deepcopy(FIXTURE)
     name = "<b>Co</b> *author* {{ site.title }}"
-    fixture["collaborators"] = [{"key": "collab", "name": name, "work_ids": ["script2024"]}]
-    fixture["works"][0]["authors"].append({"name": name, "person_id": None, "collaborator_key": "collab"})
+    next(c for c in fixture["collaborators"] if c["key"] == COLLAB)["name"] = name
     text = page(build(tmp_path, yaml.safe_dump(fixture, allow_unicode=True)), "coauthor-graph")
-    assert table_edges(text) == {("ada", "collab"): 1}
+    edges = expected_edges(fixture)
+    assert table_edges(text) == edges
     escaped = html.escape(name, quote=False)
     assert svg(text).count(escaped) == 1
-    assert text.count(escaped) == 2
+    assert text.count(escaped) == 1 + sum(1 for _, c in edges if c == COLLAB)
     assert "<b>" not in text and "<i>" not in text
 
 
