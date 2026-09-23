@@ -16,6 +16,7 @@ Skipped when Bundler or the pinned Jekyll is not installed.
 """
 
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -46,6 +47,11 @@ INPUT_VERIFIED = "https://input-verified.invalid/talk"
 INPUT_MISSING = "https://input-missing.invalid/talk"
 INPUT_MISSING_WEB = "https://input-missing.invalid/site"
 
+# Only http, https and mailto become links; anything else is not rendered.
+BAD_URLS = ["javascript:alert(1)", "data:text/html;base64,PHNjcmlwdD4=",
+            "vbscript:msgbox(1)", "JaVaScRiPt:alert(2)", "relative/page.html"]
+GOOD_URLS = ["http://http.invalid/", "https://https.invalid/", "mailto:ada@mail.invalid"]
+
 
 def link(url, origin, status):
     return {"url": url, "label": None, "origin": origin,
@@ -66,7 +72,8 @@ def work(bib_id, title, links, note=None):
 
 FIXTURE = {
     "lab": {"name": "Fixture <Lab>", "department": "*Dept*",
-            "university": "U & U", "description": "<b>desc</b>"},
+            "university": "U & U", "description": "<b>desc</b>",
+            "website": GOOD_URLS[0], "github": BAD_URLS[3], "youtube": BAD_URLS[1]},
     "works": [
         work("script2024", SCRIPT_TITLE, note=NOTE, links={
             "pdf": [link(PDF_UNCHECKED, "derived", "unchecked")],
@@ -74,9 +81,11 @@ FIXTURE = {
             "arxiv": [link(SIDECAR_UNCHECKED, "sidecar", "unchecked"),
                       link(ARXIV_UNCHECKED, "derived", "unchecked")],
             "video": [link(INPUT_UNCHECKED, "input", "unchecked")],
+            "url": [link(BAD_URLS[0], "input", "unchecked")],
         }),
         work("plain2024", "A plain title", links={
             "pdf": [link(PDF_VERIFIED, "derived", "verified")],
+            "doi": [link(GOOD_URLS[1], "derived", "unchecked")],
             "url": [link(INPUT_VERIFIED, "input", "verified")],
             "video": [link(INPUT_VERIFIED, "input", "verified")],
         }),
@@ -89,14 +98,15 @@ FIXTURE = {
     "people": [
         {"id": "ada", "name": PERSON_NAME, "role": "phd_student",
          "status": "current", "thesis_title": "*Thesis* <b>x</b>",
-         "co_advisor": "<i>Someone</i>", "start_year": 2020},
+         "co_advisor": "<i>Someone</i>", "start_year": 2020,
+         "website": BAD_URLS[2]},
         {"id": "pi", "name": "<b>The</b> *PI*", "role": "professor",
-         "status": "current"},
+         "status": "current", "website": GOOD_URLS[2]},
     ],
     "projects": [
         {"id": "demo", "title": "*Project* <b>One</b>",
          "description": "Project _description_ <script>x</script>",
-         "status": "active", "work_ids": ["script2024", "plain2024", "missing2024"]},
+         "status": "active", "website": BAD_URLS[4], "work_ids": ["script2024", "plain2024", "missing2024"]},
     ],
     "collaborators": [{"name": "<b>Collab</b> *Orator*"}],
 }
@@ -265,6 +275,16 @@ def test_verified_input_link_has_no_label(built):
         anchor = f'<a href="{INPUT_VERIFIED}" style="margin-right: 0.6em;">{text}</a>'
         assert anchor in html
         assert anchor + " <small" not in html
+
+
+def test_only_http_https_and_mailto_urls_become_links(built):
+    html = all_html(built)
+    for url in BAD_URLS:
+        assert url not in html, url
+    for url in GOOD_URLS:
+        assert f'href="{url}"' in html, url
+    targets = re.findall(r'(?:href|src)="([^"]*)"', html)
+    assert all(t.startswith(("http://", "https://", "mailto:", "/")) for t in targets), targets
 
 
 def test_works_not_publications(built):

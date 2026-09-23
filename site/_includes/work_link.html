@@ -1,4 +1,8 @@
 {%- comment -%}
+Unescaped outputs. Every output not listed here is escaped.
+- `url`: a URL captured from safe_url.html, which escapes it.
+{%- endcomment -%}
+{%- comment -%}
 A work's link of one kind, as an anchor, or nothing.
 
 `links` is an open map from kind to a *list* of link records. This renders
@@ -34,7 +38,8 @@ Parameters: `work`, `kind`, `text` (escaped here), and optional `class`,
     {%- break -%}
   {%- endif -%}
 {%- endfor -%}
-{%- if link -%}
-<a href="{{ link.url | escape }}"{% if include.class %} class="{{ include.class | escape }}"{% endif %}{% if include.style %} style="{{ include.style | escape }}"{% endif %}{% if include.blank %} target="_blank"{% endif %}>{{ include.text | escape }}</a>
+{%- capture url -%}{% include safe_url.html url=link.url %}{%- endcapture -%}
+{%- if url != "" -%}
+<a href="{{ url }}"{% if include.class %} class="{{ include.class | escape }}"{% endif %}{% if include.style %} style="{{ include.style | escape }}"{% endif %}{% if include.blank %} target="_blank"{% endif %}>{{ include.text | escape }}</a>
 {%- if link.origin == "input" and link.verification.status != "verified" %} <small class="link-status" style="color: #8a6d3b;">(unchecked)</small>{% endif -%}
 {%- endif -%}

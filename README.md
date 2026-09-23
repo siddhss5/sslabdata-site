@@ -37,9 +37,13 @@ section.
   where it is printed, `note` included; none is read as HTML or Markdown.
   A template that prints anything unescaped names it, with the reason, in an
   "Unescaped outputs." comment; only values the templates make themselves
-  (counts, literal paths, HTML built by `work_link.html`) are listed, never a
-  data field. `tests/test_site_template_source.py` fails on any output that is
-  neither escaped nor listed.
+  (counts, literal paths, HTML built by `work_link.html`, URLs from
+  `safe_url.html`) are listed, never a data field.
+  `tests/test_site_template_source.py` fails on any output that is neither
+  escaped nor listed.
+- **Only http, https and mailto links.** A URL from the data file becomes a
+  link only through [`site/_includes/safe_url.html`](site/_includes/safe_url.html),
+  which drops any other scheme and any relative path.
 - **Links that are not guesses.** A work's link is shown when it is written in
   the input (`origin: input`), when its `verification.status` is `verified`,
   or when sslabdata built it from an identifier the entry declares: the
