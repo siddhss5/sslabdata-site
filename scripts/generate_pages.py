@@ -1,5 +1,5 @@
-"""Write one Jekyll page per work, person, project and co-author, and the
-co-author graph.
+"""Write one Jekyll page per work, person, project and co-author, the
+co-author graph, and a .bib file of each person's and project's works.
 
 Reads the document sslabdata emits and writes a page for each entity into the
 output directory, replacing what was there. A page's front matter holds the
@@ -88,6 +88,15 @@ def main(data_file, out_dir):
         front = {"title": literal(title), "permalink": f"/{section}/{id_}/", **data}
         path.write_text("---\n" + yaml.safe_dump(front, allow_unicode=True, sort_keys=False)
                         + f"---\n{{% include {kind}_page.html %}}\n", encoding="utf-8")
+        # The works' BibTeX as the data file carries it, one entry after
+        # another. Liquid prints a front matter value without reading it as
+        # Liquid, so the file holds the entries byte for byte.
+        if kind in ("person", "project") and data["works"]:
+            bib = {"layout": None, "permalink": f"/{section}/{id_}.bib",
+                   "bibtex": "\n\n".join(w["bibtex"] for w in data["works"] if w.get("bibtex"))}
+            (out / section / f"{id_}.bib").write_text(
+                "---\n" + yaml.safe_dump(bib, allow_unicode=True, sort_keys=False)
+                + "---\n{{ page.bibtex }}\n", encoding="utf-8")
     front = {"title": "Co-author graph", "permalink": "/coauthor-graph/", **graph}
     (out / "coauthor-graph.html").write_text(
         "---\n" + yaml.safe_dump(front, allow_unicode=True, sort_keys=False)
