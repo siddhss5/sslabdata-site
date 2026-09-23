@@ -2,3 +2,5 @@ source "https://rubygems.org"
 
 # github-pages pins Jekyll and every Pages plugin, including jekyll-include-cache.
 gem "github-pages", "~> 232", group: :jekyll_plugins
+# The theme as a gem, so the build needs no network: Gemfile.lock pins the version.
+gem "minimal-mistakes-jekyll", "~> 4.28"
