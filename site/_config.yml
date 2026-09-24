@@ -4,6 +4,13 @@ minimal_mistakes_skin: "default"
 # title, description, url and baseurl come from lab.yaml via
 # _config.generated.yml (see scripts/generate_site_config.py). Build with:
 #   bundle exec jekyll build --config _config.yml,_config.generated.yml
+# The empty defaults below stop jekyll-github-metadata (loaded by
+# github-pages) from fetching them from the GitHub API, so the build needs
+# no network.
+title: ""
+description: ""
+url: ""
+baseurl: ""
 
 plugins:
   - jekyll-include-cache
