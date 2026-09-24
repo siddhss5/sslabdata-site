@@ -404,6 +404,11 @@ def test_demo_work_websites_and_videos_are_on_the_works_list_and_work_pages(demo
     built, document = demo
     shown = {}
     for w in document["works"]:
+        # Each equal contributor, linked or not, is starred, then the note once.
+        equal = [(html.escape(a["name"]), "") for a in w["authors"] if a.get("equal_contribution")]
+        assert re.findall(r"([^<>]*)(?:</a>)?<sup>\*</sup>( equal contribution</span>)?",
+                          page(built, f"publications/{w['bib_id']}")) == \
+            equal + [(" &mdash; ", " equal contribution</span>")] * bool(equal), w["bib_id"]
         for kind, text in [("url", "Website"), ("video", "Video")]:
             for l in (w.get("links") or {}).get(kind) or []:
                 # The demo's are written in the input and unchecked.
@@ -415,22 +420,6 @@ def test_demo_work_websites_and_videos_are_on_the_works_list_and_work_pages(demo
                 shown.setdefault(w["bib_id"], set()).add(kind)
     assert len([i for i, kinds in shown.items() if "url" in kinds]) >= 2
     assert {"url", "video"} in shown.values()
-
-
-def test_demo_equal_contributors_are_starred_on_their_work_page(demo):
-    """Each equal contributor's name is followed by a star and the page adds the
-    note; a work with no equal contributors shows neither."""
-    built, document = demo
-    note = '<sup>*</sup> equal contribution</span>'
-    equal = {w["bib_id"]: [a["name"] for a in w["authors"] if a.get("equal_contribution")]
-             for w in document["works"]}
-    assert any(equal.values()) and not all(equal.values())
-    for bib_id, names in equal.items():
-        text = page(built, f"publications/{bib_id}")
-        assert (note in text) == bool(names), bib_id
-        assert text.count("<sup>*</sup>") == len(names) + bool(names), bib_id
-        for name in names:
-            assert f"{html.escape(name)}</a><sup>*</sup>" in text, (bib_id, name)
 
 
 def test_demo_photos_are_shown_with_the_name_as_alt(demo):
