@@ -175,7 +175,7 @@ wheels = [
 [[package]]
 name = "sslabdata"
 version = "3.0.0"
-source = { git = "https://github.com/siddhss5/sslabdata?rev=6f6f36aaf57aeb42828987a0bb64f6cbd96457ca#6f6f36aaf57aeb42828987a0bb64f6cbd96457ca" }
+source = { git = "https://github.com/siddhss5/sslabdata?rev=b308cf987562ce30de039ead0e858f657b274a89#b308cf987562ce30de039ead0e858f657b274a89" }
 dependencies = [
     { name = "pybtex" },
     { name = "pylatexenc" },
@@ -199,7 +199,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "pyyaml" },
-    { name = "sslabdata", git = "https://github.com/siddhss5/sslabdata?rev=6f6f36aaf57aeb42828987a0bb64f6cbd96457ca" },
+    { name = "sslabdata", git = "https://github.com/siddhss5/sslabdata?rev=b308cf987562ce30de039ead0e858f657b274a89" },
 ]
 
 [package.metadata.requires-dev]
