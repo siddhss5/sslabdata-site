@@ -131,4 +131,3 @@ def test_every_demo_page_is_structurally_sound(themed_demo):
     failures = {str(p.relative_to(themed_demo)): problems(p.read_text(encoding="utf-8"))
                 for p in pages}
     assert {p: f for p, f in failures.items() if f} == {}
-

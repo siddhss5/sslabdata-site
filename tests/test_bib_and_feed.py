@@ -153,4 +153,3 @@ def test_themed_build_is_deterministic(themed, tmp_path):
     assert len(outputs) > 1
     for p in outputs:
         assert (first / p).read_bytes() == (second / p).read_bytes(), p
-
