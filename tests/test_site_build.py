@@ -64,6 +64,12 @@ BAD_PHOTOS = {"ccote": "javascript:alert(3)", "ddavis": "mailto:photo@mail.inval
               "eevans": "//photo-host.invalid/x.png", "hhughes": "\\\\photo-host.invalid\\x.png",
               "jjones": "data:image/png;base64,AAAA"}
 
+# A project's image follows the same rules as a photo. The demo gives
+# PROJECT a file of the site; the fixture gives the other two projects an
+# http(s) URL and a URL that is not shown.
+IMAGE_ABSOLUTE = "https://image.invalid/legged.png"
+BAD_IMAGE = "javascript:alert(4)"
+
 # Only http, https and mailto become links; anything else is not rendered.
 BAD_URLS = ["javascript:alert(1)", "data:text/html;base64,PHNjcmlwdD4=",
             "vbscript:msgbox(1)", "JaVaScRiPt:alert(2)", "relative/page.html"]
@@ -72,7 +78,7 @@ GOOD_URLS = ["http://http.invalid/", "https://https.invalid/", "mailto:ada@mail.
 
 def link(url, origin, status):
     return {"url": url, "label": None, "origin": origin,
-            "verification": {"status": status, "checked_at": None}}
+            "verification": {"status": status}}
 
 
 # Entities of the demo document that the fixture gives hostile values.
@@ -132,13 +138,15 @@ def fixture_document(document):
     people["ggreen"]["role"] = "visiting_scholar"
     people["iingram"]["role"] = "professor"
     document["people"].append({**people["eevans"], "id": NEWCOMER, "name": "Nadia Newcomer",
-                               "work_count": 0, "work_ids": []})
+                               "work_ids": []})
     projects[PROJECT].update({"title": "*Project* <b>One</b>",
                               "description": "Project _description_ <script>x</script>",
                               "status": "active", "website": BAD_URLS[4]})
     # Work counts the Projects page words differently: one work and none.
     projects["legged"]["work_ids"] = projects["legged"]["work_ids"][:1]
     projects["sharedcontrol"]["work_ids"] = []
+    projects["legged"]["image"] = IMAGE_ABSOLUTE
+    projects["sharedcontrol"]["image"] = BAD_IMAGE
     coauthors[COLLAB]["name"] = "<b>Collab</b> *Orator*"
     return document
 
@@ -374,6 +382,18 @@ def test_photos_are_site_files_or_http_urls_with_the_name_as_alt(built):
         assert photo not in text and "photo-host.invalid" not in text, photo
 
 
+def test_project_images_are_site_files_or_http_urls_with_the_title_as_alt(built):
+    projects = {x["id"]: x for x in FIXTURE["projects"]}
+    entries = project_entries(built)
+    for project_id, src in [(PROJECT, f"/{projects[PROJECT]['image']}"), ("legged", IMAGE_ABSOLUTE)]:
+        img = f'<img src="{src}" alt="{html.escape(projects[project_id]["title"])}"'
+        assert img in entries[project_id], project_id
+        assert img in page(built, f"projects/{project_id}"), project_id
+    assert "<img" not in entries["sharedcontrol"]
+    assert "<img" not in page(built, "projects/sharedcontrol")
+    assert BAD_IMAGE not in all_html(built)
+
+
 def test_only_http_https_and_mailto_urls_become_links(built):
     html = all_html(built)
     for url in BAD_URLS:
@@ -464,6 +484,23 @@ def test_demo_photos_are_shown_with_the_name_as_alt(demo):
         img = f'<img src="/{p["photo"]}" alt="{html.escape(p["name"])}"'
         for path in ["people", f"people/{p['id']}"]:
             assert img in page(built, path), (path, p["id"])
+
+
+def test_demo_project_images_are_shown_with_the_title_as_alt(demo):
+    """Two demo projects have an image, shown on the Projects page and on
+    their pages; the third has none, and no <img> stands in for it."""
+    built, document = demo
+    entries = project_entries(built)
+    with_image = [x for x in document["projects"] if x.get("image")]
+    assert len(with_image) == 2 and len(document["projects"]) == 3
+    for x in document["projects"]:
+        pages = [entries[x["id"]], page(built, f"projects/{x['id']}")]
+        if x.get("image"):
+            assert (built / x["image"]).is_file(), x["image"]
+            img = f'<img src="/{x["image"]}" alt="{html.escape(x["title"])}"'
+            assert all(img in text for text in pages), x["id"]
+        else:
+            assert all("<img" not in text for text in pages), x["id"]
 
 
 def test_demo_entity_pages_link_both_ways(demo):
