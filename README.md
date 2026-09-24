@@ -58,11 +58,11 @@ section.
   the input (`origin: input`), when its `verification.status` is `verified`,
   or when sslabdata built it from an identifier the entry declares: the
   `derived` links of kind `doi` (from `doi`) and `arxiv` (from `eprint`),
-  which are shown unlabelled. Any other `derived` link, such as the PDF link
+  which are shown. Any other `derived` link, such as the PDF link
   guessed from `pdf_base_url` and the citation key, is not shown until it is
   verified; nor is a link of another origin (`sidecar`, `enrichment`,
-  `inferred` or one added later). An input link that is not verified is shown
-  labelled "(unchecked)", whatever its status. See
+  `inferred` or one added later). An input link is shown as it is, whatever
+  its verification. See
   [`site/_includes/work_link.html`](site/_includes/work_link.html), which
   names the identifier kinds in an explicit list.
 - **The works list is complete without JavaScript.** `/publications/` lists

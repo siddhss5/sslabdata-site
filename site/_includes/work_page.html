@@ -1,9 +1,20 @@
 {%- comment -%}
-A work's page, written by scripts/generate_pages.py. publication.html links
-the authors to their person or co-author pages and the projects to theirs.
+A work's page, written by scripts/generate_pages.py: the work as it is listed,
+then its abstract and its BibTeX. publication.html links the authors to their
+person or co-author pages and the projects to theirs. The BibTeX is in a
+<details> element, so it opens without JavaScript; only Copy needs it.
 {%- endcomment -%}
 {% include publication.html pub=page.work %}
 {% if page.work.abstract %}
 <h2>Abstract</h2>
 <p>{{ page.work.abstract | escape }}</p>
+{% endif %}
+{% if page.work.bibtex %}
+<details style="margin-top: 1em;">
+  <summary style="cursor: pointer;">BibTeX</summary>
+  <div style="position: relative; margin-top: 0.3em;">
+    <button onclick="navigator.clipboard.writeText(this.nextElementSibling.textContent.trim()).then(function(){event.target.textContent='Copied!';setTimeout(function(){event.target.textContent='Copy'},1500)})" style="position: absolute; top: 0.3em; right: 0.3em; font-size: 0.75em; padding: 0.2em 0.5em; cursor: pointer; background: #fff; border: 1px solid #ccc; border-radius: 3px;">Copy</button>
+    <code style="display: block; padding: 0.8em; background: #f8f8f8; border-left: 3px solid #ccc; font-size: 0.8em; white-space: pre-wrap; overflow-x: auto;">{{ page.work.bibtex | xml_escape }}</code>
+  </div>
+</details>
 {% endif %}

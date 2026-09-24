@@ -302,39 +302,57 @@ def test_identifier_links_are_rendered_without_label(built, path):
 
 def test_verified_guessed_link_is_rendered_without_label(built):
     for path, anchor in [
-        ("publications", f'<strong><a href="{PDF_VERIFIED}">A plain title</a></strong>'),
-        ("projects", f'<a href="{PDF_VERIFIED}">A plain title</a>'),
+        ("publications", f'<a href="{PDF_VERIFIED}" class="btn btn--inverse btn--small" target="_blank">PDF</a>'),
+        (f"publications/{PLAIN}", f'<a href="{PDF_VERIFIED}" class="btn btn--inverse btn--small" target="_blank">PDF</a>'),
+        ("projects", f'<a href="{PDF_VERIFIED}" class="btn btn--inverse btn--small" target="_blank">PDF</a>'),
     ]:
         html = page(built, path)
         assert anchor in html, path
         assert anchor + " <small" not in html, path
 
 
-def test_unverified_input_link_is_labelled_unchecked(built):
+@pytest.mark.parametrize("path", ["", "publications", "projects", f"people/{PI}", f"projects/{PROJECT}",
+                                  f"publications/{PLAIN}"])
+def test_work_with_a_pdf_shows_a_pdf_button_and_its_title_links_to_its_page(built, path):
+    html = page(built, path)
+    assert f'<strong><a href="/publications/{PLAIN}/">A plain title</a></strong>' in html
+    assert f'<a href="{PDF_VERIFIED}" class="btn btn--inverse btn--small" target="_blank">PDF</a>' in html
+
+
+def test_unverified_input_link_is_shown_as_it_is(built):
     for path, anchor in [
         ("publications", f'<a href="{INPUT_UNCHECKED}" class="btn btn--inverse btn--small" target="_blank">Video</a>'),
-        ("projects", f'<a href="{INPUT_UNCHECKED}" style="margin-right: 0.6em;">Video</a>'),
+        ("projects", f'<a href="{INPUT_UNCHECKED}" class="btn btn--inverse btn--small" target="_blank">Video</a>'),
     ]:
         html = page(built, path)
-        assert anchor + ' <small class="link-status" style="color: #8a6d3b;">(unchecked)</small>' in html, path
+        assert anchor in html, path
+        assert anchor + " <small" not in html, path
 
 
-def test_missing_input_link_is_labelled_unchecked(built):
+def test_missing_input_link_is_shown_as_it_is(built):
     for path, anchors in [
         ("publications", [f'<a href="{INPUT_MISSING_WEB}" class="btn btn--inverse btn--small" target="_blank">Website</a>',
                           f'<a href="{INPUT_MISSING}" class="btn btn--inverse btn--small" target="_blank">Video</a>']),
         (f"publications/{MISSING}", [f'<a href="{INPUT_MISSING_WEB}" class="btn btn--inverse btn--small" target="_blank">Website</a>']),
-        ("projects", [f'<a href="{INPUT_MISSING_WEB}" style="margin-right: 0.6em;">Website</a>',
-                      f'<a href="{INPUT_MISSING}" style="margin-right: 0.6em;">Video</a>']),
+        ("projects", [f'<a href="{INPUT_MISSING_WEB}" class="btn btn--inverse btn--small" target="_blank">Website</a>',
+                      f'<a href="{INPUT_MISSING}" class="btn btn--inverse btn--small" target="_blank">Video</a>']),
     ]:
         html = page(built, path)
         for anchor in anchors:
-            assert anchor + ' <small class="link-status" style="color: #8a6d3b;">(unchecked)</small>' in html, path
+            assert anchor in html, path
+            assert anchor + " <small" not in html, path
         assert "(missing)" not in html, path
 
 
+@pytest.mark.parametrize("site", ["built", "demo"])
+def test_no_page_labels_a_link_unchecked(site, request):
+    built = request.getfixturevalue(site)
+    built = built[0] if site == "demo" else built
+    assert "(unchecked)" not in all_html(built)
+
+
 def test_verified_input_link_has_no_label(built):
-    for path, attrs in [("projects", 'style="margin-right: 0.6em;"'),
+    for path, attrs in [("projects", 'class="btn btn--inverse btn--small" target="_blank"'),
                         ("publications", 'class="btn btn--inverse btn--small" target="_blank"'),
                         (f"publications/{PLAIN}", 'class="btn btn--inverse btn--small" target="_blank"')]:
         html = page(built, path)
@@ -383,9 +401,11 @@ def test_demo_shows_identifier_links_and_hides_guessed_pdfs(demo):
     built, document = demo
     html = all_html(built)
     links = [(kind, l) for w in document["works"]
-             for kind, records in (w.get("links") or {}).items() for l in records]
+             for kind, records in (w.get("links") or {}).items() for l in records
+             if l["origin"] != "input"]
     by_kind = {kind: [l for k, l in links if k == kind] for kind in ("doi", "arxiv", "pdf")}
-    # The pinned sslabdata builds all three as derived and unchecked.
+    # The pinned sslabdata builds all three as derived and unchecked, except
+    # a PDF the entry names in its own `pdf` field.
     assert all(l["origin"] == "derived" and l["verification"]["status"] == "unchecked"
                for records in by_kind.values() for l in records)
     assert by_kind["doi"] and by_kind["arxiv"] and by_kind["pdf"]
@@ -396,6 +416,19 @@ def test_demo_shows_identifier_links_and_hides_guessed_pdfs(demo):
             assert anchor + " <small" not in html, l["url"]
     for l in by_kind["pdf"]:
         assert l["url"] not in html, l["url"]
+
+
+def test_demo_work_with_a_pdf_field_shows_a_pdf_button_to_it(demo):
+    built, document = demo
+    named = [(w, l) for w in document["works"] for l in (w.get("links") or {}).get("pdf") or []
+             if l["origin"] == "input"]
+    assert [l["url"] for _, l in named] == ["https://example.org/papers/cote2024pantry.pdf"]
+    [(w, l)] = named
+    anchor = f'<a href="{l["url"]}" class="btn btn--inverse btn--small" target="_blank">PDF</a>'
+    title = f'<strong><a href="/publications/{w["bib_id"]}/">{html.escape(w["title"])}</a></strong>'
+    for path in ["publications", "projects", f"publications/{w['bib_id']}", f"projects/{w['project_ids'][0]}"]:
+        assert anchor in page(built, path), path
+        assert title in page(built, path), path
 
 
 def test_demo_work_websites_and_videos_are_on_the_works_list_and_work_pages(demo):
@@ -414,7 +447,7 @@ def test_demo_work_websites_and_videos_are_on_the_works_list_and_work_pages(demo
                 # The demo's are written in the input and unchecked.
                 assert l["origin"] == "input" and l["verification"]["status"] == "unchecked"
                 anchor = (f'<a href="{html.escape(l["url"])}" class="btn btn--inverse btn--small" '
-                          f'target="_blank">{text}</a> <small class="link-status"')
+                          f'target="_blank">{text}</a>')
                 for path in ["publications", f"publications/{w['bib_id']}"]:
                     assert anchor in page(built, path), (path, l["url"])
                 shown.setdefault(w["bib_id"], set()).add(kind)
@@ -475,6 +508,47 @@ def test_demo_entity_pages_link_both_ways(demo):
         for target in re.findall(r'href="(/[^"#]*)', f.read_text(encoding="utf-8")):
             assert (built / target.lstrip("/") / "index.html").is_file() or \
                 (built / target.lstrip("/")).is_file(), (f, target)
+
+
+def list_pages(document):
+    """The pages that list works: the home page, the Works list, the Projects
+    list, and every person, project and co-author page."""
+    return (["", "publications", "projects"] + [f"people/{p['id']}" for p in document["people"]]
+            + [f"projects/{x['id']}" for x in document["projects"]]
+            + [f"coauthors/{c['key']}" for c in document["collaborators"]])
+
+
+@pytest.mark.parametrize("site", ["built", "demo"])
+def test_list_pages_show_no_abstract_or_bibtex(site, request):
+    built = request.getfixturevalue(site)
+    built, document = built if site == "demo" else (built, FIXTURE)
+    details = [w[f] for w in document["works"] for f in ("abstract", "bibtex") if w.get(f)]
+    assert details
+    for path in list_pages(document):
+        text = page(built, path)
+        assert "onclick" not in text and "<code" not in text and ">Details</a>" not in text, path
+        for d in details:
+            assert d not in html.unescape(text), path
+
+
+@pytest.mark.parametrize("site", ["built", "demo"])
+def test_work_pages_show_the_abstract_once_and_bibtex_in_details(site, request):
+    """A work's page shows its abstract once, as text, and its BibTeX in a
+    <details> element whose visible <summary> opens it without JavaScript."""
+    built = request.getfixturevalue(site)
+    built, document = built if site == "demo" else (built, FIXTURE)
+    assert any(w.get("abstract") for w in document["works"])
+    for w in document["works"]:
+        text = page(built, f"publications/{w['bib_id']}")
+        [(summary, body)] = re.findall(r"<details[^>]*>\s*<summary([^>]*)>BibTeX</summary>(.*?)</details>",
+                                        text, re.S)
+        if w.get("abstract"):
+            # Once outside the BibTeX, which carries it as a field.
+            assert html.unescape(text.replace(body, "")).count(w["abstract"]) == 1, w["bib_id"]
+        assert "display: none" not in summary and "onclick" not in summary, w["bib_id"]
+        assert w["bibtex"] in html.unescape(body), w["bib_id"]
+        # The only script on the page is Copy's.
+        assert text.count("onclick") == 1 and "Copy</button>" in body, w["bib_id"]
 
 
 def assert_titled(text, name):
