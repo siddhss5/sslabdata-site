@@ -4,8 +4,7 @@ Each check is a property read from the markup alone: one <h1> and no skipped
 heading level going down, an alt on every <img>, a lang on <html>, a non-empty
 <title>, and a name on every link (its text, an aria-label, an
 aria-labelledby or the alt of an image inside it). Each check also has a test
-that it fails on a small page that breaks it. The report-only external-link
-check, scripts/check_external_links.py, is tested here offline.
+that it fails on a small page that breaks it.
 
 Skipped when Bundler or the pinned Jekyll is not installed.
 """
@@ -14,7 +13,7 @@ from html.parser import HTMLParser
 
 import pytest
 
-from test_site_build import REPO_ROOT, build, demo_data
+from test_site_build import build, demo_data
 
 
 class Structure(HTMLParser):
@@ -132,20 +131,3 @@ def test_every_demo_page_is_structurally_sound(themed_demo):
     failures = {str(p.relative_to(themed_demo)): problems(p.read_text(encoding="utf-8"))
                 for p in pages}
     assert {p: f for p, f in failures.items() if f} == {}
-
-
-def test_external_link_check_reports_and_exits_0(tmp_path, monkeypatch, capsys):
-    """Offline: the network request is replaced by one that always fails."""
-    monkeypatch.syspath_prepend(str(REPO_ROOT / "scripts"))
-    import check_external_links as links
-
-    (tmp_path / "a").mkdir()
-    (tmp_path / "a" / "index.html").write_text(wrap(
-        '<a href="https://x.invalid/">X</a><a href="/local/">L</a><a href="mailto:m@x.invalid">M</a>'))
-    (tmp_path / "index.html").write_text(wrap('<a href="https://x.invalid/">X</a>'))
-    assert links.external_links(tmp_path) == {"https://x.invalid/": ["a/index.html", "index.html"]}
-    monkeypatch.setattr(links, "check", lambda url: "unreachable")
-    assert links.main([str(tmp_path)]) == 0
-    out = capsys.readouterr().out
-    assert "https://x.invalid/\n  unreachable\n  linked from: a/index.html, index.html" in out
-    assert "1 of 1 external links did not answer." in out

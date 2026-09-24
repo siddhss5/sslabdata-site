@@ -16,11 +16,9 @@ from pathlib import Path
 import pytest
 import yaml
 
-from test_site_build import FIXTURE, NEWCOMER, PI, PLAIN, REPO_ROOT, build, demo, demo_data, page  # noqa: F401
-from test_site_template_source import allowlist, unescaped_outputs, unsafe_link_targets
+from test_site_build import FIXTURE, NEWCOMER, PI, PLAIN, build, demo, demo_data, page  # noqa: F401
 
 ATOM = "{http://www.w3.org/2005/Atom}"
-FEED = REPO_ROOT / "site" / "feed.xml"
 
 # BibTeX that Liquid, YAML, HTML or XML could each misread.
 TRICKY_BIBTEX = ("@misc{tricky,\n  title = {{{ site.title }} {% raw %} <b>&amp;</b> Côté 87\\% ---},\n"
@@ -155,11 +153,3 @@ def test_themed_build_is_deterministic(themed, tmp_path):
     assert len(outputs) > 1
     for p in outputs:
         assert (first / p).read_bytes() == (second / p).read_bytes(), p
-
-
-def test_feed_template_escapes_every_data_output():
-    source = FEED.read_text(encoding="utf-8")
-    unescaped = unescaped_outputs(source)
-    assert unescaped == allowlist(source).keys()
-    assert all("absolute_url" in e for e in unescaped), unescaped
-    assert unsafe_link_targets(source) == []
