@@ -304,14 +304,14 @@ def test_verified_guessed_link_is_rendered_without_label(built):
     for path, anchor in [
         ("publications", f'<a href="{PDF_VERIFIED}" class="btn btn--inverse btn--small" target="_blank">PDF</a>'),
         (f"publications/{PLAIN}", f'<a href="{PDF_VERIFIED}" class="btn btn--inverse btn--small" target="_blank">PDF</a>'),
-        ("projects", f'<a href="{PDF_VERIFIED}">A plain title</a>'),
+        ("projects", f'<a href="{PDF_VERIFIED}" class="btn btn--inverse btn--small" target="_blank">PDF</a>'),
     ]:
         html = page(built, path)
         assert anchor in html, path
         assert anchor + " <small" not in html, path
 
 
-@pytest.mark.parametrize("path", ["", "publications", f"people/{PI}", f"projects/{PROJECT}",
+@pytest.mark.parametrize("path", ["", "publications", "projects", f"people/{PI}", f"projects/{PROJECT}",
                                   f"publications/{PLAIN}"])
 def test_work_with_a_pdf_shows_a_pdf_button_and_its_title_links_to_its_page(built, path):
     html = page(built, path)
@@ -322,7 +322,7 @@ def test_work_with_a_pdf_shows_a_pdf_button_and_its_title_links_to_its_page(buil
 def test_unverified_input_link_is_shown_as_it_is(built):
     for path, anchor in [
         ("publications", f'<a href="{INPUT_UNCHECKED}" class="btn btn--inverse btn--small" target="_blank">Video</a>'),
-        ("projects", f'<a href="{INPUT_UNCHECKED}" style="margin-right: 0.6em;">Video</a>'),
+        ("projects", f'<a href="{INPUT_UNCHECKED}" class="btn btn--inverse btn--small" target="_blank">Video</a>'),
     ]:
         html = page(built, path)
         assert anchor in html, path
@@ -334,8 +334,8 @@ def test_missing_input_link_is_shown_as_it_is(built):
         ("publications", [f'<a href="{INPUT_MISSING_WEB}" class="btn btn--inverse btn--small" target="_blank">Website</a>',
                           f'<a href="{INPUT_MISSING}" class="btn btn--inverse btn--small" target="_blank">Video</a>']),
         (f"publications/{MISSING}", [f'<a href="{INPUT_MISSING_WEB}" class="btn btn--inverse btn--small" target="_blank">Website</a>']),
-        ("projects", [f'<a href="{INPUT_MISSING_WEB}" style="margin-right: 0.6em;">Website</a>',
-                      f'<a href="{INPUT_MISSING}" style="margin-right: 0.6em;">Video</a>']),
+        ("projects", [f'<a href="{INPUT_MISSING_WEB}" class="btn btn--inverse btn--small" target="_blank">Website</a>',
+                      f'<a href="{INPUT_MISSING}" class="btn btn--inverse btn--small" target="_blank">Video</a>']),
     ]:
         html = page(built, path)
         for anchor in anchors:
@@ -352,7 +352,7 @@ def test_no_page_labels_a_link_unchecked(site, request):
 
 
 def test_verified_input_link_has_no_label(built):
-    for path, attrs in [("projects", 'style="margin-right: 0.6em;"'),
+    for path, attrs in [("projects", 'class="btn btn--inverse btn--small" target="_blank"'),
                         ("publications", 'class="btn btn--inverse btn--small" target="_blank"'),
                         (f"publications/{PLAIN}", 'class="btn btn--inverse btn--small" target="_blank"')]:
         html = page(built, path)
@@ -426,7 +426,7 @@ def test_demo_work_with_a_pdf_field_shows_a_pdf_button_to_it(demo):
     [(w, l)] = named
     anchor = f'<a href="{l["url"]}" class="btn btn--inverse btn--small" target="_blank">PDF</a>'
     title = f'<strong><a href="/publications/{w["bib_id"]}/">{html.escape(w["title"])}</a></strong>'
-    for path in ["publications", f"publications/{w['bib_id']}", f"projects/{w['project_ids'][0]}"]:
+    for path in ["publications", "projects", f"publications/{w['bib_id']}", f"projects/{w['project_ids'][0]}"]:
         assert anchor in page(built, path), path
         assert title in page(built, path), path
 
@@ -526,7 +526,7 @@ def test_list_pages_show_no_abstract_or_bibtex(site, request):
     assert details
     for path in list_pages(document):
         text = page(built, path)
-        assert "onclick" not in text and "<code" not in text, path
+        assert "onclick" not in text and "<code" not in text and ">Details</a>" not in text, path
         for d in details:
             assert d not in html.unescape(text), path
 

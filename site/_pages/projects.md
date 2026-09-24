@@ -8,10 +8,6 @@ classes: wide
 {%- comment -%}
 Unescaped outputs. Every output not listed here is escaped.
 - `project.work_ids.size`: a count Liquid computes, not a string from the data file.
-- `title_link`: HTML captured from work_link.html, which escapes the link's URL and text.
-- `web_link`: HTML captured from work_link.html, which escapes the link's URL and text.
-- `video_link`: HTML captured from work_link.html, which escapes the link's URL and text.
-- `'/publications/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
 - `url`: a URL captured from safe_url.html, which escapes it.
 - `'/projects/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
 {%- endcomment -%}
@@ -49,30 +45,7 @@ Unescaped outputs. Every output not listed here is escaped.
 {% for work_id in project.work_ids %}
   {% assign pub = works | where: "bib_id", work_id | first %}
   {% if pub %}
-  {% capture title_link %}{% include work_link.html work=pub kind="pdf" text=pub.title %}{% endcapture %}
-  {% capture web_link %}{% include work_link.html work=pub kind="url" text="Website" style="margin-right: 0.6em;" %}{% endcapture %}
-  {% capture video_link %}{% include work_link.html work=pub kind="video" text="Video" style="margin-right: 0.6em;" %}{% endcapture %}
-<div style="margin-bottom: 1.2em;">
-  <div>
-    {% if title_link != "" %}
-      {{ title_link }}
-    {% else %}
-      {{ pub.title | escape }}
-    {% endif %}
-  </div>
-  <div style="font-size: 0.9em; color: #494e52;">
-    {% include author_list.html authors=pub.authors %}
-  </div>
-  <div style="font-size: 0.9em; color: #494e52;">
-    {% include venue.html work=pub %}
-  </div>
-  <div style="font-size: 0.9em; margin-top: 0.2em;">
-    <a href="{{ '/publications/' | relative_url }}{{ pub.bib_id | escape }}/" style="margin-right: 0.6em;">Details</a>
-    {{ web_link }}
-    {{ video_link }}
-    {% if pub.note %}<strong>{{ pub.note | escape }}</strong>{% endif %}
-  </div>
-</div>
+  {% include publication.html pub=pub %}
   {% endif %}
 {% endfor %}
 </div>
