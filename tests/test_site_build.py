@@ -56,6 +56,14 @@ INPUT_VERIFIED = "https://input-verified.invalid/talk"
 INPUT_MISSING = "https://input-missing.invalid/talk"
 INPUT_MISSING_WEB = "https://input-missing.invalid/site"
 
+# A photo is a file of the site or an http or https URL; any other value is
+# not shown.
+PHOTO_RELATIVE = "assets/people/ada.png"
+PHOTO_ABSOLUTE = "https://photo.invalid/pi.png"
+BAD_PHOTOS = {"ccote": "javascript:alert(3)", "ddavis": "mailto:photo@mail.invalid",
+              "eevans": "//photo-host.invalid/x.png", "hhughes": "\\\\photo-host.invalid\\x.png",
+              "jjones": "data:image/png;base64,AAAA"}
+
 # Only http, https and mailto become links; anything else is not rendered.
 BAD_URLS = ["javascript:alert(1)", "data:text/html;base64,PHNjcmlwdD4=",
             "vbscript:msgbox(1)", "JaVaScRiPt:alert(2)", "relative/page.html"]
@@ -114,8 +122,11 @@ def fixture_document(document):
             if a["collaborator_key"] == COLLAB:
                 a["name"] = "<u>Grace</u> Hopper"
     people[ADA].update({"name": PERSON_NAME, "thesis_title": "*Thesis* <b>x</b>",
-                        "co_advisor": "<i>Someone</i>", "website": BAD_URLS[2]})
-    people[PI].update({"name": "<b>The</b> *PI*", "website": GOOD_URLS[2]})
+                        "co_advisor": "<i>Someone</i>", "website": BAD_URLS[2],
+                        "photo": PHOTO_RELATIVE})
+    people[PI].update({"name": "<b>The</b> *PI*", "website": GOOD_URLS[2], "photo": PHOTO_ABSOLUTE})
+    for person_id, photo in BAD_PHOTOS.items():
+        people[person_id]["photo"] = photo
     # Roles a fixed list of groups would drop, and a professor among the alumni.
     people["ffischer"]["role"] = "engineer"
     people["ggreen"]["role"] = "visiting_scholar"
@@ -310,7 +321,9 @@ def test_unverified_input_link_is_labelled_unchecked(built):
 
 def test_missing_input_link_is_labelled_unchecked(built):
     for path, anchors in [
-        ("publications", [f'<a href="{INPUT_MISSING}" class="btn btn--inverse btn--small" target="_blank">Video</a>']),
+        ("publications", [f'<a href="{INPUT_MISSING_WEB}" class="btn btn--inverse btn--small" target="_blank">Website</a>',
+                          f'<a href="{INPUT_MISSING}" class="btn btn--inverse btn--small" target="_blank">Video</a>']),
+        (f"publications/{MISSING}", [f'<a href="{INPUT_MISSING_WEB}" class="btn btn--inverse btn--small" target="_blank">Website</a>']),
         ("projects", [f'<a href="{INPUT_MISSING_WEB}" style="margin-right: 0.6em;">Website</a>',
                       f'<a href="{INPUT_MISSING}" style="margin-right: 0.6em;">Video</a>']),
     ]:
@@ -321,11 +334,26 @@ def test_missing_input_link_is_labelled_unchecked(built):
 
 
 def test_verified_input_link_has_no_label(built):
-    html = page(built, "projects")
-    for text in ["Website", "Video"]:
-        anchor = f'<a href="{INPUT_VERIFIED}" style="margin-right: 0.6em;">{text}</a>'
-        assert anchor in html
-        assert anchor + " <small" not in html
+    for path, attrs in [("projects", 'style="margin-right: 0.6em;"'),
+                        ("publications", 'class="btn btn--inverse btn--small" target="_blank"'),
+                        (f"publications/{PLAIN}", 'class="btn btn--inverse btn--small" target="_blank"')]:
+        html = page(built, path)
+        for text in ["Website", "Video"]:
+            anchor = f'<a href="{INPUT_VERIFIED}" {attrs}>{text}</a>'
+            assert anchor in html, (path, text)
+            assert anchor + " <small" not in html, (path, text)
+
+
+def test_photos_are_site_files_or_http_urls_with_the_name_as_alt(built):
+    ada = f'<img src="/{PHOTO_RELATIVE}" alt="*Ada* &lt;i&gt;Lovelace&lt;/i&gt;"'
+    pi = f'<img src="{PHOTO_ABSOLUTE}" alt="&lt;b&gt;The&lt;/b&gt; *PI*"'
+    assert re.findall(r'<img src="([^"]*)"', page(built, "people")) == [PHOTO_ABSOLUTE, f"/{PHOTO_RELATIVE}"]
+    assert ada in page(built, "people") and ada in page(built, f"people/{ADA}")
+    assert pi in page(built, "people") and pi in page(built, f"people/{PI}")
+    text = all_html(built)
+    for person_id, photo in BAD_PHOTOS.items():
+        assert "<img" not in page(built, f"people/{person_id}"), person_id
+        assert photo not in text and "photo-host.invalid" not in text, photo
 
 
 def test_only_http_https_and_mailto_urls_become_links(built):
@@ -368,6 +396,36 @@ def test_demo_shows_identifier_links_and_hides_guessed_pdfs(demo):
             assert anchor + " <small" not in html, l["url"]
     for l in by_kind["pdf"]:
         assert l["url"] not in html, l["url"]
+
+
+def test_demo_work_websites_and_videos_are_on_the_works_list_and_work_pages(demo):
+    """Every work's website and video is shown on the works list and on the
+    work's page, and at least one work shows both."""
+    built, document = demo
+    shown = {}
+    for w in document["works"]:
+        for kind, text in [("url", "Website"), ("video", "Video")]:
+            for l in (w.get("links") or {}).get(kind) or []:
+                # The demo's are written in the input and unchecked.
+                assert l["origin"] == "input" and l["verification"]["status"] == "unchecked"
+                anchor = (f'<a href="{html.escape(l["url"])}" class="btn btn--inverse btn--small" '
+                          f'target="_blank">{text}</a> <small class="link-status"')
+                for path in ["publications", f"publications/{w['bib_id']}"]:
+                    assert anchor in page(built, path), (path, l["url"])
+                shown.setdefault(w["bib_id"], set()).add(kind)
+    assert len([i for i, kinds in shown.items() if "url" in kinds]) >= 2
+    assert {"url", "video"} in shown.values()
+
+
+def test_demo_photos_are_shown_with_the_name_as_alt(demo):
+    built, document = demo
+    with_photo = [p for p in document["people"] if p.get("photo")]
+    assert len(with_photo) >= 3
+    for p in with_photo:
+        assert (built / p["photo"]).is_file(), p["photo"]
+        img = f'<img src="/{p["photo"]}" alt="{html.escape(p["name"])}"'
+        for path in ["people", f"people/{p['id']}"]:
+            assert img in page(built, path), (path, p["id"])
 
 
 def test_demo_entity_pages_link_both_ways(demo):
