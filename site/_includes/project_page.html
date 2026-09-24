@@ -5,9 +5,11 @@ published contributors.
 
 Unescaped outputs. Every output not listed here is escaped.
 - `url`: a URL captured from safe_url.html, which escapes it.
+- `image`: a URL captured from photo_url.html, which escapes it.
 - `'/people/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
 - `'/projects/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
 {%- endcomment -%}
+{% capture image %}{% include photo_url.html photo=page.project.image %}{% endcapture %}{% if image != "" %}<p><img src="{{ image }}" alt="{{ page.project.title | escape }}" width="320"></p>{% endif %}
 {% if page.project.description %}<p>{{ page.project.description | escape }}</p>{% endif %}
 {% capture url %}{% include safe_url.html url=page.project.website %}{% endcapture %}{% if url != "" %}<p><a href="{{ url }}">Website</a></p>{% endif %}
 {% if page.people.size > 0 %}

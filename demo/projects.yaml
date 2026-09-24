@@ -2,12 +2,14 @@
   title: "Household Manipulation"
   description: "Robots that tidy up, fetch things and put them away in real homes, learning from demonstrations and play."
   website: "https://example.org/projects/homebot"
+  image: "assets/images/projects/homebot.svg"
   status: "active"
 
 - id: "sharedcontrol"
   title: "Shared Autonomy"
   description: "Blending a person's input with robot autonomy so that assistive arms are easier to control."
   website: "https://example.org/projects/sharedcontrol"
+  image: "assets/images/projects/sharedcontrol.svg"
   status: "active"
 
 - id: "legged"

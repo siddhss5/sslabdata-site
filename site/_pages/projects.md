@@ -7,12 +7,13 @@ classes: wide
 
 {%- comment -%}
 Each project is listed compactly: its title links to the project's page, which
-lists its contributors and works; here it has only its status, description,
-website and work count.
+lists its contributors and works; here it has only its image, as a thumbnail,
+status, description, website and work count.
 
 Unescaped outputs. Every output not listed here is escaped.
 - `project.work_ids.size`: a count Liquid computes, not a string from the data file.
 - `url`: a URL captured from safe_url.html, which escapes it.
+- `image`: a URL captured from photo_url.html, which escapes it.
 - `'/projects/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
 {%- endcomment -%}
 
@@ -24,6 +25,7 @@ Unescaped outputs. Every output not listed here is escaped.
 
 {% for project in projects %}
 <div id="{{ project.id | escape }}" style="margin-top: 2.5em;">
+{% capture image %}{% include photo_url.html photo=project.image %}{% endcapture %}{% if image != "" %}<img src="{{ image }}" alt="{{ project.title | escape }}" width="64" style="vertical-align: middle; margin-right: 0.5em;">{% endif %}
 
 <h2 style="display: inline; margin-right: 0.5em;"><a href="{{ '/projects/' | relative_url }}{{ project.id | escape }}/">{{ project.title | escape }}</a></h2>
 {% if project.status == "active" %}
