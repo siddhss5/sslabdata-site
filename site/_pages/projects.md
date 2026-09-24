@@ -6,6 +6,10 @@ classes: wide
 ---
 
 {%- comment -%}
+Each project is listed compactly: its title links to the project's page, which
+lists its contributors and works; here it has only its status, description,
+website and work count.
+
 Unescaped outputs. Every output not listed here is escaped.
 - `project.work_ids.size`: a count Liquid computes, not a string from the data file.
 - `url`: a URL captured from safe_url.html, which escapes it.
@@ -13,7 +17,6 @@ Unescaped outputs. Every output not listed here is escaped.
 {%- endcomment -%}
 
 {% assign projects = site.data.lab.projects %}
-{% assign works = site.data.lab.works %}
 
 {% if projects.size == 0 %}
 <p><em>No projects data configured yet. Add a <code>projects_file</code> to your sslabdata config to populate this page.</em></p>
@@ -22,34 +25,20 @@ Unescaped outputs. Every output not listed here is escaped.
 {% for project in projects %}
 <div id="{{ project.id | escape }}" style="margin-top: 2.5em;">
 
-<h2 style="display: inline; margin-right: 0.5em;">{{ project.title | escape }}</h2>
+<h2 style="display: inline; margin-right: 0.5em;"><a href="{{ '/projects/' | relative_url }}{{ project.id | escape }}/">{{ project.title | escape }}</a></h2>
 {% if project.status == "active" %}
-  {% capture url %}{% include safe_url.html url=project.website %}{% endcapture %}{% if url != "" %}
-    <a href="{{ url }}" target="_blank" class="btn btn--success btn--small">Active</a>
-  {% else %}
-    <span class="btn btn--success btn--small">Active</span>
-  {% endif %}
+  <span class="btn btn--success btn--small">Active</span>
 {% else %}
   <span class="btn btn--secondary btn--small">{{ project.status | capitalize | escape }}</span>
 {% endif %}
-<a href="{{ '/projects/' | relative_url }}{{ project.id | escape }}/" class="btn btn--info btn--small">{{ project.id | escape }}</a>
 
 {% if project.description %}
 <p style="margin-top: 0.8em;">{{ project.description | escape }}</p>
 {% endif %}
 
-{% if project.work_ids.size > 0 %}
-<details>
-<summary style="cursor: pointer; font-size: 1.17em; font-weight: bold; margin-top: 0.5em; margin-bottom: 0.5em;">Works ({{ project.work_ids.size }})</summary>
-<div style="margin-top: 0.8em;">
-{% for work_id in project.work_ids %}
-  {% assign pub = works | where: "bib_id", work_id | first %}
-  {% if pub %}
-  {% include publication.html pub=pub %}
-  {% endif %}
-{% endfor %}
-</div>
-</details>
+{% capture url %}{% include safe_url.html url=project.website %}{% endcapture %}
+{% if url != "" or project.work_ids.size > 0 %}
+<p>{% if url != "" %}<a href="{{ url }}" class="btn btn--inverse btn--small" target="_blank">Website</a> {% endif %}{% if project.work_ids.size == 1 %}1 work{% elsif project.work_ids.size > 1 %}{{ project.work_ids.size }} works{% endif %}</p>
 {% endif %}
 
 </div>
