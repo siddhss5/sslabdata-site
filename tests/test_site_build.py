@@ -404,6 +404,11 @@ def test_demo_work_websites_and_videos_are_on_the_works_list_and_work_pages(demo
     built, document = demo
     shown = {}
     for w in document["works"]:
+        # Each equal contributor is starred, then the note appears once.
+        equal = [(html.escape(a["name"]), "") for a in w["authors"] if a.get("equal_contribution")]
+        assert re.findall(r"([^<>]*)(?:</a>)?<sup>\*</sup>( equal contribution</span>)?",
+                          page(built, f"publications/{w['bib_id']}")) == \
+            equal + [(" &mdash; ", " equal contribution</span>")] * bool(equal), w["bib_id"]
         for kind, text in [("url", "Website"), ("video", "Video")]:
             for l in (w.get("links") or {}).get(kind) or []:
                 # The demo's are written in the input and unchecked.
