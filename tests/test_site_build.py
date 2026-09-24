@@ -136,6 +136,9 @@ def fixture_document(document):
     projects[PROJECT].update({"title": "*Project* <b>One</b>",
                               "description": "Project _description_ <script>x</script>",
                               "status": "active", "website": BAD_URLS[4]})
+    # Work counts the Projects page words differently: one work and none.
+    projects["legged"]["work_ids"] = projects["legged"]["work_ids"][:1]
+    projects["sharedcontrol"]["work_ids"] = []
     coauthors[COLLAB]["name"] = "<b>Collab</b> *Orator*"
     return document
 
@@ -251,16 +254,18 @@ def all_html(built):
 
 
 PAGES = ["", "publications", "projects"]
+# The pages above that list works; the Projects page lists projects only.
+WORK_LISTS = ["", "publications"]
 
 
-@pytest.mark.parametrize("path", PAGES)
+@pytest.mark.parametrize("path", WORK_LISTS)
 def test_title_is_literal_text(built, path):
     html = page(built, path)
     assert "&lt;script&gt;alert(1)&lt;/script&gt; and a tidy kitchen" in html
     assert "<script>alert(1)</script>" not in html
 
 
-@pytest.mark.parametrize("path", PAGES)
+@pytest.mark.parametrize("path", WORK_LISTS)
 def test_note_is_plain_text_not_markdown(built, path):
     html = page(built, path)
     assert "*emphasis* &amp; &lt;b&gt;bold&lt;/b&gt;" in html
@@ -304,14 +309,13 @@ def test_verified_guessed_link_is_rendered_without_label(built):
     for path, anchor in [
         ("publications", f'<a href="{PDF_VERIFIED}" class="btn btn--inverse btn--small" target="_blank">PDF</a>'),
         (f"publications/{PLAIN}", f'<a href="{PDF_VERIFIED}" class="btn btn--inverse btn--small" target="_blank">PDF</a>'),
-        ("projects", f'<a href="{PDF_VERIFIED}" class="btn btn--inverse btn--small" target="_blank">PDF</a>'),
     ]:
         html = page(built, path)
         assert anchor in html, path
         assert anchor + " <small" not in html, path
 
 
-@pytest.mark.parametrize("path", ["", "publications", "projects", f"people/{PI}", f"projects/{PROJECT}",
+@pytest.mark.parametrize("path", ["", "publications", f"people/{PI}", f"projects/{PROJECT}",
                                   f"publications/{PLAIN}"])
 def test_work_with_a_pdf_shows_a_pdf_button_and_its_title_links_to_its_page(built, path):
     html = page(built, path)
@@ -322,7 +326,6 @@ def test_work_with_a_pdf_shows_a_pdf_button_and_its_title_links_to_its_page(buil
 def test_unverified_input_link_is_shown_as_it_is(built):
     for path, anchor in [
         ("publications", f'<a href="{INPUT_UNCHECKED}" class="btn btn--inverse btn--small" target="_blank">Video</a>'),
-        ("projects", f'<a href="{INPUT_UNCHECKED}" class="btn btn--inverse btn--small" target="_blank">Video</a>'),
     ]:
         html = page(built, path)
         assert anchor in html, path
@@ -334,8 +337,6 @@ def test_missing_input_link_is_shown_as_it_is(built):
         ("publications", [f'<a href="{INPUT_MISSING_WEB}" class="btn btn--inverse btn--small" target="_blank">Website</a>',
                           f'<a href="{INPUT_MISSING}" class="btn btn--inverse btn--small" target="_blank">Video</a>']),
         (f"publications/{MISSING}", [f'<a href="{INPUT_MISSING_WEB}" class="btn btn--inverse btn--small" target="_blank">Website</a>']),
-        ("projects", [f'<a href="{INPUT_MISSING_WEB}" class="btn btn--inverse btn--small" target="_blank">Website</a>',
-                      f'<a href="{INPUT_MISSING}" class="btn btn--inverse btn--small" target="_blank">Video</a>']),
     ]:
         html = page(built, path)
         for anchor in anchors:
@@ -352,8 +353,7 @@ def test_no_page_labels_a_link_unchecked(site, request):
 
 
 def test_verified_input_link_has_no_label(built):
-    for path, attrs in [("projects", 'class="btn btn--inverse btn--small" target="_blank"'),
-                        ("publications", 'class="btn btn--inverse btn--small" target="_blank"'),
+    for path, attrs in [("publications", 'class="btn btn--inverse btn--small" target="_blank"'),
                         (f"publications/{PLAIN}", 'class="btn btn--inverse btn--small" target="_blank"')]:
         html = page(built, path)
         for text in ["Website", "Video"]:
@@ -394,7 +394,7 @@ def test_works_not_publications(built):
         assert '<a href="/publications/">Works</a>' in page(built, path), path
     assert "Recent Works" in page(built, "")
     project = next(x for x in FIXTURE["projects"] if x["id"] == PROJECT)
-    assert f"Works ({len(project['work_ids'])})</summary>" in page(built, "projects")
+    assert f"<p>{len(project['work_ids'])} works</p>" in page(built, "projects")
 
 
 def test_demo_shows_identifier_links_and_hides_guessed_pdfs(demo):
@@ -426,7 +426,7 @@ def test_demo_work_with_a_pdf_field_shows_a_pdf_button_to_it(demo):
     [(w, l)] = named
     anchor = f'<a href="{l["url"]}" class="btn btn--inverse btn--small" target="_blank">PDF</a>'
     title = f'<strong><a href="/publications/{w["bib_id"]}/">{html.escape(w["title"])}</a></strong>'
-    for path in ["publications", "projects", f"publications/{w['bib_id']}", f"projects/{w['project_ids'][0]}"]:
+    for path in ["publications", f"publications/{w['bib_id']}", f"projects/{w['project_ids'][0]}"]:
         assert anchor in page(built, path), path
         assert title in page(built, path), path
 
@@ -511,9 +511,9 @@ def test_demo_entity_pages_link_both_ways(demo):
 
 
 def list_pages(document):
-    """The pages that list works: the home page, the Works list, the Projects
-    list, and every person, project and co-author page."""
-    return (["", "publications", "projects"] + [f"people/{p['id']}" for p in document["people"]]
+    """The pages that list works: the home page, the Works list, and every
+    person, project and co-author page."""
+    return (WORK_LISTS + [f"people/{p['id']}" for p in document["people"]]
             + [f"projects/{x['id']}" for x in document["projects"]]
             + [f"coauthors/{c['key']}" for c in document["collaborators"]])
 
@@ -549,6 +549,48 @@ def test_work_pages_show_the_abstract_once_and_bibtex_in_details(site, request):
         assert w["bibtex"] in html.unescape(body), w["bib_id"]
         # The only script on the page is Copy's.
         assert text.count("onclick") == 1 and "Copy</button>" in body, w["bib_id"]
+
+
+def project_entries(built):
+    """Each entry of the Projects page, as its markup keyed by project id."""
+    return dict(re.findall(r'<div id="([^"]+)" style="margin-top: 2.5em;">(.*?)</div>',
+                           page(built, "projects"), re.S))
+
+
+@pytest.mark.parametrize("site", ["built", "demo"])
+def test_projects_page_lists_each_project_compactly(site, request):
+    """Each project's title links to its page; its status is a label, not a
+    link; a Website button shows only for an http, https or mailto website;
+    the work count is text, omitted when zero. No work is listed."""
+    built = request.getfixturevalue(site)
+    built, document = built if site == "demo" else (built, FIXTURE)
+    text = page(built, "projects")
+    assert "<details" not in text and "pub-entry" not in text
+    assert not re.search(r'href="/publications/[^"]+/"', text)
+    entries = project_entries(built)
+    assert list(entries) == [x["id"] for x in document["projects"]]
+    websites, counts = set(), set()
+    for x in document["projects"]:
+        entry = entries[x["id"]]
+        assert (built / "projects" / x["id"] / "index.html").is_file(), x["id"]
+        assert (f'<h2 style="display: inline; margin-right: 0.5em;"><a href="/projects/{x["id"]}/">'
+                f'{html.escape(x["title"])}</a></h2>') in entry, x["id"]
+        status = "Active" if x["status"] == "active" else html.escape(x["status"].capitalize())
+        kind = "success" if x["status"] == "active" else "secondary"
+        assert f'<span class="btn btn--{kind} btn--small">{status}</span>' in entry, x["id"]
+        assert not re.search(r"<a [^>]*btn--(success|secondary)", entry), x["id"]
+        website = (x.get("website") or "").strip()
+        safe = website.split(":")[0].lower() in ("http", "https", "mailto") and ":" in website
+        websites.add("safe" if safe else "unsafe" if website else "missing")
+        button = f'<a href="{html.escape(website)}" class="btn btn--inverse btn--small" target="_blank">Website</a>'
+        assert (button in entry) == safe and entry.count(">Website</a>") == safe, x["id"]
+        n = len(x["work_ids"])
+        counts.add(min(n, 2))
+        assert re.findall(r"\b\d+ works?\b", entry) == ([] if n == 0 else ["1 work"] if n == 1
+                                                         else [f"{n} works"]), x["id"]
+    # The fixture has a project for each case.
+    if site == "built":
+        assert websites == {"safe", "unsafe", "missing"} and counts == {0, 1, 2}
 
 
 def assert_titled(text, name):
