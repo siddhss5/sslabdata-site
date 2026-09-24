@@ -1,0 +1,19 @@
+{%- comment -%}
+`include.photo` as an image URL, escaped, or nothing. An absolute URL is
+kept only if its scheme is http or https, through safe_url.html. A relative
+path is a file of this site and is resolved against the baseurl with
+relative_url; one that starts with `//` or contains `\`, which a browser
+reads as another host, is dropped. Capture it and show the image only when it
+is not empty:
+
+  {% capture photo %}{% include photo_url.html photo=p.photo %}{% endcapture %}
+  {% if photo != "" %}<img src="{{ photo }}" alt="{{ p.name | escape }}">{% endif %}
+{%- endcomment -%}
+{%- assign photo_input = include.photo | strip -%}
+{%- if photo_input contains ":" -%}
+  {%- assign photo_scheme = photo_input | split: ":" | first | downcase -%}
+  {%- if photo_scheme == "http" or photo_scheme == "https" -%}{% include safe_url.html url=photo_input %}{%- endif -%}
+{%- elsif photo_input != "" -%}
+  {%- assign photo_start = photo_input | slice: 0, 2 -%}
+  {%- unless photo_start == "//" or photo_input contains "\" -%}{{ photo_input | relative_url | escape }}{%- endunless -%}
+{%- endif -%}

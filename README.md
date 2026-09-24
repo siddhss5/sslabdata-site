@@ -49,6 +49,11 @@ section.
 - **Only http, https and mailto links.** A URL from the data file becomes a
   link only through [`site/_includes/safe_url.html`](site/_includes/safe_url.html),
   which drops any other scheme and any relative path.
+- **Photos from the site or http(s).** A person's `photo` is shown on their
+  page and on the People page, with their name as its `alt`, through
+  [`site/_includes/photo_url.html`](site/_includes/photo_url.html): an
+  absolute URL only if it is http or https, a relative path as a file of the
+  site, under its `baseurl`.
 - **Links that are not guesses.** A work's link is shown when it is written in
   the input (`origin: input`), when its `verification.status` is `verified`,
   or when sslabdata built it from an identifier the entry declares: the

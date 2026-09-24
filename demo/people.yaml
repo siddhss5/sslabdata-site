@@ -4,6 +4,7 @@
   aliases: ["A. Adams", "A. J. Adams"]
   role: "professor"
   status: "current"
+  photo: "assets/images/people/aadams.svg"
   website: "https://example.org/people/aadams"
   email: "aadams@example.org"
   start_year: 2015
@@ -14,6 +15,7 @@
   aliases: ["B. Brown"]
   role: "phd_student"
   status: "current"
+  photo: "assets/images/people/bbrown.svg"
   website: "https://example.org/people/bbrown"
   co_advisor: "Peggy Park"
   start_year: 2021
@@ -61,6 +63,7 @@
   aliases: ["H. Hughes"]
   role: "postdoc"
   status: "alumni"
+  photo: "assets/images/people/hhughes.svg"
   website: "https://example.org/people/hhughes"
   start_year: 2018
   end_year: 2021
