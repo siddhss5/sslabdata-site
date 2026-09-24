@@ -45,7 +45,7 @@ Unescaped outputs. Every output not listed here is escaped.
 
 ## Browse
 
-- [**Works**]({{ '/publications/' | relative_url }}) — Full list of works with search, abstracts, and BibTeX
+- [**Works**]({{ '/publications/' | relative_url }}) — Full list of works with search
 - [**People**]({{ '/people/' | relative_url }}) — Current members, alumni, and collaborators
 - [**Projects**]({{ '/projects/' | relative_url }}) — Research projects with linked works
 

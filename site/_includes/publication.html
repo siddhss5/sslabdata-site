@@ -1,20 +1,15 @@
 {%- comment -%}
-One work. Every string from the data file is plain text and is escaped where
-it is printed; `note` is plain text too, not Markdown.
+One work, as it is listed: the title links to the work's own page, where its
+abstract and BibTeX are. Every string from the data file is plain text and is
+escaped where it is printed; `note` is plain text too, not Markdown.
 
 Unescaped outputs. Every output not listed here is escaped.
-- `title_link`: HTML captured from work_link.html, which escapes the link's URL and text.
 - `'/publications/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
 - `'/projects/' | relative_url`: the site path is a literal in this template; relative_url only prefixes the baseurl from _config.yml.
 {%- endcomment -%}
-{% capture title_link %}{% include work_link.html work=include.pub kind="pdf" text=include.pub.title %}{% endcapture %}
 <div class="pub-entry" style="margin-bottom: 1.5em;" data-year="{{ include.pub.year | escape }}" data-type="{{ include.pub.category | escape }}" data-projects="{{ include.pub.project_ids | join: ' ' | escape }}" data-people="{{ include.pub.authors | map: 'person_id' | compact | join: ' ' | escape }}" data-searchable="{{ include.pub.title | downcase | escape }} {{ include.pub.authors | map: 'name' | join: ' ' | downcase | escape }} {{ include.pub.venue.name | downcase | escape }} {{ include.pub.bib_id | downcase | escape }}">
   <div style="margin-bottom: 0.3em;">
-    {% if title_link != "" %}
-      <strong>{{ title_link }}</strong>
-    {% else %}
-      <strong>{{ include.pub.title | escape }}</strong>
-    {% endif %}
+    <strong><a href="{{ '/publications/' | relative_url }}{{ include.pub.bib_id | escape }}/">{{ include.pub.title | escape }}</a></strong>
   </div>
   <div style="color: #666; margin-bottom: 0.3em;">
     {% include author_list.html authors=include.pub.authors %}
@@ -24,15 +19,9 @@ Unescaped outputs. Every output not listed here is escaped.
     {% if include.pub.note %}<br><strong>{{ include.pub.note | escape }}</strong>{% endif %}
   </div>
   <div>
-    <a href="{{ '/publications/' | relative_url }}{{ include.pub.bib_id | escape }}/" class="btn btn--inverse btn--small">Details</a>
+    {% include work_link.html work=include.pub kind="pdf" text="PDF" class="btn btn--inverse btn--small" blank=true %}
     {% include work_link.html work=include.pub kind="doi" text="DOI" class="btn btn--inverse btn--small" blank=true %}
     {% include work_link.html work=include.pub kind="arxiv" text="arXiv" class="btn btn--inverse btn--small" blank=true %}
-    {% if include.pub.abstract %}
-      <button class="btn btn--inverse btn--small" onclick="this.parentElement.parentElement.querySelector('.pub-abstract').toggleAttribute('open')">Abstract</button>
-    {% endif %}
-    {% if include.pub.bibtex %}
-      <button class="btn btn--inverse btn--small" onclick="var b=this.parentElement.parentElement.querySelector('.pub-bibtex');b.toggleAttribute('open');if(b.open){b.querySelector('code').scrollIntoView({block:'nearest'})}">BibTeX</button>
-    {% endif %}
     {% include work_link.html work=include.pub kind="url" text="Website" class="btn btn--inverse btn--small" blank=true %}
     {% include work_link.html work=include.pub kind="video" text="Video" class="btn btn--inverse btn--small" blank=true %}
     {% if include.pub.project_ids.size > 0 %}
@@ -41,21 +30,4 @@ Unescaped outputs. Every output not listed here is escaped.
       {% endfor %}
     {% endif %}
   </div>
-  {% if include.pub.abstract %}
-  <details class="pub-abstract" style="margin-top: 0.5em;">
-    <summary style="display: none;"></summary>
-    <div style="padding: 0.8em; background: #f8f8f8; border-left: 3px solid #ccc; font-size: 0.9em; margin-top: 0.3em;">
-      {{ include.pub.abstract | escape }}
-    </div>
-  </details>
-  {% endif %}
-  {% if include.pub.bibtex %}
-  <details class="pub-bibtex" style="margin-top: 0.5em;">
-    <summary style="display: none;"></summary>
-    <div style="position: relative; margin-top: 0.3em;">
-      <button onclick="navigator.clipboard.writeText(this.nextElementSibling.textContent.trim()).then(function(){event.target.textContent='Copied!';setTimeout(function(){event.target.textContent='Copy'},1500)})" style="position: absolute; top: 0.3em; right: 0.3em; font-size: 0.75em; padding: 0.2em 0.5em; cursor: pointer; background: #fff; border: 1px solid #ccc; border-radius: 3px;">Copy</button>
-      <code style="display: block; padding: 0.8em; background: #f8f8f8; border-left: 3px solid #ccc; font-size: 0.8em; white-space: pre-wrap; overflow-x: auto;">{{ include.pub.bibtex | xml_escape }}</code>
-    </div>
-  </details>
-  {% endif %}
 </div>

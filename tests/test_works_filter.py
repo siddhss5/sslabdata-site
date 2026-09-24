@@ -63,7 +63,7 @@ console.log(JSON.stringify(out));
 
 class WorksPage(HTMLParser):
     """The works list as built: each entry's attributes and the work its
-    Details link names, the entries in each section, the form's fields, the
+    title link names, the entries in each section, the form's fields, the
     page's script sources and the elements marked hidden."""
 
     def __init__(self):
