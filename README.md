@@ -24,9 +24,8 @@ is not the owner's real lab site.
 | [`demo/`](demo/) | Example Lab's `lab.yaml`, `people.yaml`, `projects.yaml`, `collaborators.yaml` and `bib/` |
 | [`scripts/generate_site_config.py`](scripts/generate_site_config.py) | Writes the Jekyll settings that come from `lab.yaml` to `site/_config.generated.yml` |
 | [`scripts/generate_pages.py`](scripts/generate_pages.py) | Writes a page for every work, person, project and co-author in the data file to `site/_entities/`, each linking to the others it names, the co-author graph page, and a `.bib` of each person's and project's works, their `bibtex` fields unchanged |
-| [`scripts/check_external_links.py`](scripts/check_external_links.py) | Reports the external links in a built site that do not answer; always exits 0 |
-| [`tests/`](tests/) | Tests for `generate_site_config.py`, source-level checks on the templates, checks on the HTML Jekyll builds from a fixture data file, the works filter script run under node on the built demo, and structural checks (headings, `alt`, `lang`, `<title>`, link names) on every page of the demo built with the theme |
-| [`.github/workflows/`](.github/workflows/) | `build.yml` (the build), `pages.yml` (build on PRs, deploy from `main`), `release-gate.yml` (build against a candidate sslabdata), `external-links.yml` (weekly or by hand, report-only: never on a pull request) |
+| [`tests/`](tests/) | Tests for `generate_site_config.py`, checks on the HTML Jekyll builds from a fixture data file, the works filter script run under node on the built demo, and structural checks (headings, `alt`, `lang`, `<title>`, link names) on every page of the demo built with the theme |
+| [`.github/workflows/`](.github/workflows/) | `build.yml` (the build), `pages.yml` (build on PRs, deploy from `main`), `release-gate.yml` (build against a candidate sslabdata) |
 
 `scripts/generate_site_config.py` reads the optional `site:` section of
 `lab.yaml` (`url`, `baseurl` and `people_groups`) and writes it, with the lab name and
@@ -47,8 +46,6 @@ section.
   "Unescaped outputs." comment; only values the templates make themselves
   (counts, literal paths, HTML built by `work_link.html`, URLs from
   `safe_url.html`) are listed, never a data field.
-  `tests/test_site_template_source.py` fails on any output that is neither
-  escaped nor listed, in the top-level `_includes/*.html` and the pages, except `_includes/head.html`, the theme copy that prints only site settings.
 - **Only http, https and mailto links.** A URL from the data file becomes a
   link only through [`site/_includes/safe_url.html`](site/_includes/safe_url.html),
   which drops any other scheme and any relative path.

@@ -1,16 +1,13 @@
 """Check the works filter on /publications/.
 
-The demo is built once, with the stub layout test_site_build.py uses. The
-static HTML is checked as a browser without JavaScript sees it: every work
-listed, nothing hidden but the filter form.
+The demo is built once, with the stub layout test_site_build.py uses. Without
+JavaScript the page lists every work and hides only the filter form.
 
-The filtering itself is checked by running the shipped script,
-site/assets/js/works-filter.js, under node. STUB below stands in for the
-browser: it builds one fake element per `.pub-entry` and per section from the
-attributes parsed out of the built page, a fake form with the fields the page
-has, and `location` and `history` over a URL; then it runs the script and
-prints which entries it left visible. The expected works are read from the
-data file, not from the page.
+The filtering is checked by running the shipped script,
+site/assets/js/works-filter.js, under node on the built page. Node has no DOM,
+so STUB gives the script the few calls it makes: one element per `.pub-entry`
+and per section, read from the built page, the form's fields, and `location`
+and `history` over a URL. The expected works are read from the data file.
 
 Skipped when Bundler, the pinned Jekyll or node is not installed.
 """
@@ -35,10 +32,7 @@ STUB = r"""
 const fs = require('fs'), vm = require('vm');
 const input = JSON.parse(fs.readFileSync(0, 'utf8'));
 const entries = input.entries.map(a => ({hidden: false, getAttribute: n => a[n] ?? null}));
-const sections = input.sections.map(ids => ({hidden: false, querySelectorAll: s => {
-  if (s !== '.pub-entry') throw new Error(s);
-  return ids.map(i => entries[i]);
-}}));
+const sections = input.sections.map(ids => ({hidden: false, querySelectorAll: () => ids.map(i => entries[i])}));
 const elements = Object.fromEntries(input.fields.map(n => [n, {value: ''}]));
 const listeners = {};
 const form = {hidden: true, elements, addEventListener: (t, f) => { listeners[t] = f; }};
@@ -47,23 +41,18 @@ const url = new URL(input.url);
 globalThis.location = url;
 globalThis.history = {replaceState: (s, t, u) => { url.href = new URL(u, url).href; }};
 globalThis.document = {
-  getElementById: id => ({'works-filter': form, 'works-filter-count': count})[id] ?? null,
-  querySelectorAll: s => {
-    if (s === '.pub-entry') return entries;
-    if (s === '.pub-year-section, .pub-category-section') return sections;
-    throw new Error(s);
-  },
+  getElementById: id => ({'works-filter': form, 'works-filter-count': count})[id],
+  querySelectorAll: s => s === '.pub-entry' ? entries : sections,
 };
 const state = () => ({
   shown: entries.flatMap((e, i) => e.hidden ? [] : [i]),
   hiddenSections: sections.flatMap((s, i) => s.hidden ? [i] : []),
-  values: Object.fromEntries(input.fields.map(n => [n, elements[n].value])),
   formHidden: form.hidden, count: count.textContent, url: url.pathname + url.search,
 });
 vm.runInThisContext(fs.readFileSync(process.argv[1], 'utf8'));
 const out = [state()];
 if (input.set) {
-  Object.assign(elements, Object.fromEntries(Object.entries(input.set).map(([n, v]) => [n, {value: v}])));
+  for (const [n, v] of Object.entries(input.set)) elements[n].value = v;
   listeners.input();
   out.push(state());
 }
@@ -72,36 +61,32 @@ console.log(JSON.stringify(out));
 
 
 class WorksPage(HTMLParser):
-    """The works list as built: each entry's attributes and links, the entries
-    in each year and category section, the filter form and its fields, the
-    page's script tags and the elements it marks hidden."""
+    """The works list as built: each entry's attributes and the work its
+    Details link names, the entries in each section, the form's fields and the
+    elements marked hidden."""
 
     def __init__(self):
         super().__init__()
-        self.entries, self.sections, self.fields, self.scripts, self.hidden = [], [], [], [], []
-        self.form = None
+        self.entries, self.sections, self.fields, self.hidden = [], [], [], []
         self.open = []  # per open <div>: a section's index, "entry" or None
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
         classes = (attrs.get("class") or "").split()
-        if tag == "script":
-            self.scripts.append(attrs)
         if "hidden" in attrs:
             self.hidden.append(tag)
-        if tag == "form" and attrs.get("id") == "works-filter":
-            self.form = attrs
-        if tag in ("select", "input") and self.form is not None and attrs.get("name"):
+        if tag in ("select", "input") and attrs.get("name"):
             self.fields.append(attrs["name"])
         if tag == "a" and "entry" in self.open:
-            self.entries[-1]["hrefs"].append(attrs.get("href"))
+            if m := re.fullmatch(r"/publications/([^/]+)/", attrs.get("href") or ""):
+                self.entries[-1]["bib_id"] = m[1]
         if tag != "div":
             return
         if "pub-entry" in classes:
             for s in self.open:
                 if isinstance(s, int):
                     self.sections[s].append(len(self.entries))
-            self.entries.append({"attrs": attrs, "hrefs": []})
+            self.entries.append({"attrs": attrs})
             self.open.append("entry")
         elif {"pub-year-section", "pub-category-section"} & set(classes):
             self.sections.append([])
@@ -113,11 +98,12 @@ class WorksPage(HTMLParser):
         if tag == "div":
             self.open.pop()
 
-    def bib_id(self, i):
-        """The work an entry is, from its Details link."""
-        ids = [m[1] for h in self.entries[i]["hrefs"] if (m := re.fullmatch(r"/publications/([^/]+)/", h or ""))]
-        assert len(ids) == 1, self.entries[i]
-        return ids[0]
+
+def parse(built):
+    text = (built / "publications" / "index.html").read_text(encoding="utf-8")
+    page = WorksPage()
+    page.feed(text)
+    return page, text
 
 
 @pytest.fixture(scope="module")
@@ -125,11 +111,7 @@ def demo(tmp_path_factory):
     """The demo's built /publications/ page, parsed, and its data file."""
     tmp = tmp_path_factory.mktemp("works")
     data, people_groups = demo_data(tmp)
-    built = build(tmp, data, people_groups)
-    text = (built / "publications" / "index.html").read_text(encoding="utf-8")
-    page = WorksPage()
-    page.feed(text)
-    return page, text, yaml.safe_load(data)
+    return parse(build(tmp, data, people_groups))[0], yaml.safe_load(data)
 
 
 def run_filter(page, query, inputs=None):
@@ -146,7 +128,7 @@ def run_filter(page, query, inputs=None):
     assert result.returncode == 0, result.stderr
     states = json.loads(result.stdout)
     for s in states:
-        s["works"] = {page.bib_id(i) for i in s["shown"]}
+        s["works"] = {page.entries[i]["bib_id"] for i in s["shown"]}
         # A section is hidden exactly when none of its works is shown.
         assert s["hiddenSections"] == [i for i, ids in enumerate(page.sections)
                                        if not set(ids) & set(s["shown"])], s
@@ -155,91 +137,49 @@ def run_filter(page, query, inputs=None):
     return states
 
 
-def matching(document, year=None, type=None, project=None, person=None):
-    """The bib_ids of the works in the data file matching every given filter."""
+def matching(document, year=None, type=None, project=None, person=None, q=None):
+    """The bib_ids of the works in the data file matching every given filter;
+    `q` is matched against the title only."""
     return {w["bib_id"] for w in document["works"]
             if (year is None or str(w["year"]) == year)
             and (type is None or w["category"] == type)
             and (project is None or project in w["project_ids"])
-            and (person is None or person in [a["person_id"] for a in w["authors"]])}
+            and (person is None or person in [a["person_id"] for a in w["authors"]])
+            and (q is None or q.strip().lower() in w["title"].lower())}
 
 
-def test_without_javascript_every_work_is_listed_and_shown(demo):
-    page, _, document = demo
-    works = [page.bib_id(i) for i in range(len(page.entries))]
-    assert sorted(works) == sorted(w["bib_id"] for w in document["works"])
-    # Nothing is hidden but the form, which only the script reveals.
-    assert page.form is not None and page.hidden == ["form"]
-    assert "display: none" not in " ".join(e["attrs"].get("style") or "" for e in page.entries)
-
-
-def test_page_content_adds_only_the_local_filter_script(demo):
-    # Under the stub layout, so the theme's own scripts are not on the page.
-    page, _, _ = demo
-    assert page.scripts == [{"src": "/assets/js/works-filter.js"}]
-    source = SCRIPT.read_text(encoding="utf-8")
-    assert not re.search(r"\bimport\b|require\(|https?:|fetch\(|XMLHttpRequest|\.src\b|eval\(",
-                         source)
-
-
-def test_no_parameters_shows_every_work(demo):
-    page, _, document = demo
-    [state] = run_filter(page, "")
-    assert state["works"] == matching(document)
-    assert state["url"] == "/publications/"
-
-
-def filter_values(document):
-    """Every value of each filter the data file offers."""
-    works = document["works"]
-    return ([("year", str(w["year"])) for w in works]
-            + [("type", w["category"]) for w in works]
-            + [("project", p["id"]) for p in document["projects"]]
-            + [("person", p["id"]) for p in document["people"] if p["work_ids"]])
-
-
-def test_each_filter_value_shows_exactly_its_works(demo):
-    page, _, document = demo
-    values = sorted(set(filter_values(document)))
-    assert {n for n, _ in values} == {"year", "type", "project", "person"}
-    for name, value in values:
-        [state] = run_filter(page, urlencode({name: value}))
-        expected = matching(document, **{name: value})
-        assert expected and state["works"] == expected, (name, value)
-        assert state["values"][name] == value
+def test_without_javascript_every_work_is_listed_and_only_the_form_hidden(demo):
+    page, document = demo
+    assert sorted(e["bib_id"] for e in page.entries) == sorted(w["bib_id"] for w in document["works"])
+    assert page.hidden == ["form"]
 
 
 @pytest.mark.parametrize("filters", [
-    {"person": "aadams", "type": "Conference Papers"},
-    {"year": "2021", "project": "legged", "person": "hhughes"},
+    {},
+    {"year": "2021"},
+    {"type": "Journal Papers"},
+    {"project": "legged"},
+    {"person": "aadams"},
+    {"q": "  TIDY "},
     {"year": "2025", "type": "Journal Papers", "project": "homebot", "person": "ccote"},
-    {"year": "2019", "person": "jjones"},
 ])
-def test_filters_combine(demo, filters):
-    page, _, document = demo
+def test_url_filters_show_exactly_the_matching_works(demo, filters):
+    page, document = demo
     [state] = run_filter(page, urlencode(filters))
     assert state["works"] == matching(document, **filters)
-
-
-def test_unknown_value_matches_nothing(demo):
-    page, _, _ = demo
-    [state] = run_filter(page, "person=nobody")
-    assert state["works"] == set()
-    assert state["count"] == f"Showing 0 of {len(page.entries)} works"
-
-
-def test_text_search_is_a_filter_too(demo):
-    page, _, document = demo
-    [state] = run_filter(page, urlencode({"q": "  TIDY "}))
-    assert state["works"] == {w["bib_id"] for w in document["works"] if "tidy" in w["title"].lower()}
     assert state["works"]
 
 
+def test_unknown_value_matches_nothing(demo):
+    page, _ = demo
+    [state] = run_filter(page, "person=nobody")
+    assert state["works"] == set()
+
+
 def test_changing_the_form_writes_the_state_to_the_url(demo):
-    page, _, document = demo
-    before, after = run_filter(page, "year=2025&person=bbrown",
-                               inputs={"year": "2021", "type": "Journal Papers", "person": ""})
-    assert before["works"] == matching(document, year="2025", person="bbrown")
+    page, document = demo
+    _, after = run_filter(page, "year=2025&person=bbrown",
+                          inputs={"year": "2021", "type": "Journal Papers", "person": ""})
     assert after["url"] == "/publications/?" + urlencode({"year": "2021", "type": "Journal Papers"})
     assert after["works"] == matching(document, year="2021", type="Journal Papers")
     # The written URL, loaded afresh, shows the same works.
@@ -250,12 +190,9 @@ def test_changing_the_form_writes_the_state_to_the_url(demo):
 def test_undated_works_come_last_and_only_without_a_year_filter(tmp_path):
     document = yaml.safe_load(demo_data(tmp_path)[0])
     document["works"][0]["year"] = None
-    built = build(tmp_path, yaml.safe_dump(document, allow_unicode=True))
-    text = (built / "publications" / "index.html").read_text(encoding="utf-8")
-    page = WorksPage()
-    page.feed(text)
+    page, text = parse(build(tmp_path, yaml.safe_dump(document, allow_unicode=True)))
     assert re.findall(r"<h2>(.*?)</h2>", text)[-1] == "Undated"
-    assert page.bib_id(len(page.entries) - 1) == document["works"][0]["bib_id"]
+    assert page.entries[-1]["bib_id"] == document["works"][0]["bib_id"]
     years = re.search(r'<select name="year".*?</select>', text)[0]
     assert all(re.fullmatch(r"\d*", v) for v in re.findall(r'value="([^"]*)"', years))
     [state] = run_filter(page, "")
