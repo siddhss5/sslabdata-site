@@ -65,7 +65,7 @@ jobs:
     # actions/jekyll-build-pages only reads site/_config.yml, so build with
     # Jekyll directly to layer the settings generated from lab.yaml on top.
     - name: Set up Ruby
-      uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1.327.0
+      uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1.335.0
       with:
         ruby-version: '3.3'
         # Installs the gems pinned in site/Gemfile.lock (frozen) and caches them.
